@@ -2,19 +2,19 @@
 [INPUT]: Built npm package and disposable consumer/profile directories.
 [OUTPUT]: Proof that a hoisted tarball install resolves skills and writes five native project targets.
 [POS]: Installed-artifact regression, beyond source-tree imports.
-[PROTOCOL]: No real client profile or credential; ignore dependency lifecycle scripts.
+[PROTOCOL]: No real client profile or credential; ignore dependency lifecycle scripts; use physical temp paths across platforms.
 */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 test('packed executable works for five clients with skills hoisted outside the scoped package', { timeout: 120000 }, () => {
   const root = mkdtempSync(join(tmpdir(), 'ts-setup-packed-'));
-  const consumer = join(root, 'consumer');
+  const consumer = join(realpathSync(root), 'consumer');
   const npmEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) => !/^npm_/i.test(name)));
   const runNpm = (args) => process.env.npm_execpath
     ? execFileSync(process.execPath, [process.env.npm_execpath, ...args], { encoding: 'utf8', env: npmEnv })

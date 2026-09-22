@@ -1,12 +1,12 @@
 /*
 [INPUT]: Temporary projects, synthetic keys, and stub HTTP MCP responses.
-[OUTPUT]: Regression proof for native config merging, private files, safe failures, and skill invocation.
+[OUTPUT]: Regression proof for native config merging, private files, safe failures, skill invocation and aliased project paths.
 [POS]: Installer integration tests without touching a real client profile or paid tool.
 [PROTOCOL]: Use disposable roots and inspect only synthetic credentials.
 */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, statSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, statSync, existsSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -164,6 +164,7 @@ test('skill CLI receives only local source, client and scope flags', async () =>
     const calls = [];
     await installSkill('claude-code', true, cwd, { origin: 'https://preview.example.com', runner: (command, args, options) => {
       calls.push({ command, args, options });
+      mkdirSync(join(cwd, '.claude/skills/talent-summoner-preview'), { recursive: true });
       return { status: 0, stdout: JSON.stringify([{ name: 'talent-summoner-preview', status: 'installed', path: join(cwd, '.claude/skills/talent-summoner-preview') }]) };
     } });
     assert.equal(calls.length, 1);
@@ -208,6 +209,20 @@ test('configured relative skill homes reach the pinned CLI and match the protect
     }
     cleanup(cwd);
   }
+});
+
+test('pinned skill CLI accepts a project reached through a filesystem alias', async () => {
+  const root = project();
+  const physical = join(root, 'physical');
+  const alias = join(root, 'alias');
+  try {
+    mkdirSync(physical);
+    symlinkSync(physical, alias, 'dir');
+    for (const client of ['claude-code', 'cursor']) {
+      await installSkill(client, true, alias, { origin: 'https://preview.example.com' });
+      assert.ok(existsSync(join(targetPaths(client, true, physical).skill, 'SKILL.md')));
+    }
+  } finally { cleanup(root); }
 });
 
 test('pinned skills executable installs preview copies for both clients and preserves other skills', async () => {

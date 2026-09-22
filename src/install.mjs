@@ -1,6 +1,6 @@
 /*
 [INPUT]: Verified connection, chosen clients, bundled skill, and explicit replacement decision.
-[OUTPUT]: Native private MCP entries and copied client skills with per-client results.
+[OUTPUT]: Native private MCP entries and copied client skills with per-client results and physical destination checks.
 [POS]: Client-neutral installer orchestration over pinned add-mcp and skills APIs.
 [PROTOCOL]: Preflight all targets; never put credentials in subprocess arguments, environment, or output.
 */
@@ -9,7 +9,7 @@ import { parse as parseJsonc } from 'jsonc-parser';
 import { parse as parseToml } from '@iarna/toml';
 import { load as parseYaml } from 'js-yaml';
 import { spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, readFileSync, mkdirSync, openSync, closeSync, chmodSync, appendFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, mkdirSync, openSync, closeSync, chmodSync, appendFileSync, realpathSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -192,7 +192,7 @@ export async function installSkill(client, preview, cwd = process.cwd(), { runne
     try { records = JSON.parse(result.stdout); } catch { throw new Error('Skill installation result was invalid.'); }
     const expected = targetPaths(client, preview, cwd).skill;
     if (!Array.isArray(records) || !records.some((record) => record.name === (preview ? 'talent-summoner-preview' : 'talent-summoner') &&
-      record.status === 'installed' && resolve(cwd, record.path) === resolve(expected))) throw new Error('Skill installation path did not match the protected target.');
+      record.status === 'installed' && realpathSync(resolve(cwd, record.path)) === realpathSync(expected))) throw new Error('Skill installation path did not match the protected target.');
   } finally {
     if (prepared) await rm(prepared.directory, { recursive: true, force: true });
   }
