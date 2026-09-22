@@ -1,22 +1,36 @@
 {
   "name": "@talent-summoner/setup",
-  "version": "0.1.0-next.3",
+  "version": "0.1.0-next.4",
   "type": "module",
   "description": "Install the Talent Summoner skill and MCP connection",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/talent-summoner/agent-skills.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/talent-summoner/agent-skills.git"
+  },
   "homepage": "https://github.com/talent-summoner/agent-skills#readme",
-  "bin": { "talent-summoner-setup": "dist/setup.mjs" },
-  "files": ["dist", "skills/talent-summoner/SKILL.md", "skill-source.json"],
-  "engines": { "node": ">=22.20.0" },
+  "bin": {
+    "talent-summoner-setup": "dist/setup.mjs"
+  },
+  "files": [
+    "dist",
+    "skills/talent-summoner/SKILL.md",
+    "skill-source.json"
+  ],
+  "engines": {
+    "node": ">=22.20.0"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
+    "@iarna/toml": "2.2.5",
     "@inquirer/prompts": "8.7.2",
     "@modelcontextprotocol/sdk": "1.30.0",
     "add-mcp": "2.4.0",
+    "js-yaml": "4.3.2",
+    "jsonc-parser": "3.3.1",
     "skills": "1.7.0"
   },
   "devDependencies": {}

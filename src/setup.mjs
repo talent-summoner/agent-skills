@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /*
-[INPUT]: User-selected Claude Code/Cursor clients, website origin, and masked secrets.
+[INPUT]: One upstream-backed client selection, website origin, and masked secrets.
 [OUTPUT]: Verified native MCP configuration and independently copied skill for each client.
 [POS]: Sole public executable of @talent-summoner/setup.
 [PROTOCOL]: No secret flags, logging, child arguments/environment, or paid tool calls.
 */
 import { checkbox, confirm, input, password } from '@inquirer/prompts';
-import { CLIENTS, describeSetupFailure, installClients, targetPaths } from './install.mjs';
+import { describeSetupFailure, installClients, targetPaths } from './install.mjs';
+import { clientChoices } from './clients.mjs';
 import { parseOrigin, verifyConnection } from './verify.mjs';
 
 const args = process.argv.slice(2);
@@ -25,7 +26,7 @@ if (process.platform === 'win32') {
   process.exit(2);
 }
 try {
-  const clients = await checkbox({ message: 'Install for which clients?', choices: CLIENTS.map((value) => ({ name: value === 'claude-code' ? 'Claude Code' : 'Cursor', value })), required: true });
+  const clients = await checkbox({ message: 'Install for which apps?', choices: await clientChoices(preview), required: true });
   const origin = preview
     ? parseOrigin(await input({ message: 'Preview website HTTPS origin:', validate: (value) => { try { parseOrigin(value); return true; } catch { return 'Enter an HTTPS origin with no path, query, fragment, or username.'; } } }))
     : 'https://talentsummoner.com';
@@ -43,7 +44,7 @@ try {
   if (preview && await confirm({ message: 'Does this preview need a Vercel protection bypass secret?', default: false })) {
     bypass = await password({ message: 'Vercel protection bypass secret (hidden):', mask: '*', validate: (value) => value ? true : 'Enter the bypass secret.' });
   }
-  console.log('Checking the MCP connection and seven tool names…');
+  console.log('Checking your Talent Summoner connection…');
   await verifyConnection({ origin, key, bypass });
   const results = await installClients({
     clients, preview, origin, key, bypass,
@@ -61,7 +62,7 @@ try {
     } else console.log(`${result.client}: MCP entry was not configured; check permissions/configuration and rerun.`);
   }
   if (results.some((result) => !result.success)) process.exitCode = 1;
-  else console.log('Reconnect the selected clients, confirm seven Talent Summoner tools, then ask to list your sessions.');
+  else console.log('Open or restart any app you set up, then ask: “Show my Talent Summoner sourcing sessions.”');
 } catch (error) {
   const failure = describeSetupFailure(error);
   if (failure.exitCode === 0) console.log(failure.message);

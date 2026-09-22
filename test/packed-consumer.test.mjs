@@ -1,6 +1,6 @@
 /*
 [INPUT]: Built npm package and disposable consumer/profile directories.
-[OUTPUT]: Proof that a hoisted tarball install resolves skills and writes its actual global targets.
+[OUTPUT]: Proof that a hoisted tarball install resolves skills and writes five native project targets.
 [POS]: Installed-artifact regression, beyond source-tree imports.
 [PROTOCOL]: No real client profile or credential; ignore dependency lifecycle scripts.
 */
@@ -12,10 +12,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-test('packed executable works with skills hoisted outside the scoped package', { timeout: 120000 }, () => {
+test('packed executable works for five clients with skills hoisted outside the scoped package', { timeout: 120000 }, () => {
   const root = mkdtempSync(join(tmpdir(), 'ts-setup-packed-'));
   const consumer = join(root, 'consumer');
-  const profile = join(root, 'profile');
   const npmEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) => !/^npm_/i.test(name)));
   const runNpm = (args) => process.env.npm_execpath
     ? execFileSync(process.execPath, [process.env.npm_execpath, ...args], { encoding: 'utf8', env: npmEnv })
@@ -32,21 +31,23 @@ test('packed executable works with skills hoisted outside the scoped package', {
     assert.match(help.stdout, /--preview/);
     const moduleUrl = pathToFileURL(join(installed, 'dist/install.mjs')).href;
     const script = `import { installClients, targetPaths } from ${JSON.stringify(moduleUrl)};
-      const results = await installClients({ clients: ['claude-code', 'cursor'], preview: false,
+      const clients = ['claude-code', 'github-copilot-cli', 'opencode', 'codex', 'cursor'];
+      const results = await installClients({ clients, preview: true, cwd: process.cwd(),
         origin: 'https://example.com', key: 'synthetic-fixture', confirmOverwrite: async () => true });
-      if (results.some((result) => !result.success)) throw new Error('fixture install failed');
-      console.log(JSON.stringify({ claude: targetPaths('claude-code', false), cursor: targetPaths('cursor', false) }));`;
-    const env = { HOME: profile, PATH: process.env.PATH, CLAUDE_CONFIG_DIR: join(profile, 'isolated-claude') };
+      if (results.some((result) => !result.success)) throw new Error(JSON.stringify(results.map(({ client, status }) => ({ client, status }))));
+      console.log(JSON.stringify(Object.fromEntries(clients.map((client) => [client, targetPaths(client, true, process.cwd())]))));`;
+    const env = { PATH: process.env.PATH, LANG: 'C.UTF-8' };
     const child = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: consumer, env, encoding: 'utf8' });
     assert.equal(child.status, 0, child.stderr);
     const targets = JSON.parse(child.stdout);
-    assert.equal(targets.claude.skill, join(profile, 'isolated-claude/skills/talent-summoner'));
-    assert.equal(targets.cursor.skill, join(profile, '.agents/skills/talent-summoner'));
-    assert.equal(targets.claude.config, join(profile, '.claude.json'));
-    assert.equal(targets.cursor.config, join(profile, '.cursor/mcp.json'));
+    assert.equal(targets['claude-code'].config, join(consumer, '.mcp.json'));
+    assert.equal(targets['github-copilot-cli'].config, join(consumer, '.mcp.json'));
+    assert.equal(targets.opencode.config, join(consumer, 'opencode.jsonc'));
+    assert.equal(targets.codex.config, join(consumer, '.codex/config.toml'));
+    assert.equal(targets.cursor.config, join(consumer, '.cursor/mcp.json'));
     for (const target of Object.values(targets)) {
       assert.equal(existsSync(join(target.skill, 'SKILL.md')), true);
-      assert.equal(JSON.parse(readFileSync(target.config, 'utf8')).mcpServers['talent-summoner'].headers.Authorization, 'Bearer synthetic-fixture');
+      assert.match(readFileSync(target.config, 'utf8'), /Bearer synthetic-fixture/);
     }
   } finally {
     rmSync(root, { recursive: true, force: true });

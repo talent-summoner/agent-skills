@@ -8,7 +8,7 @@ import { chmod, copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 await mkdir('dist', { recursive: true });
-for (const name of ['setup.mjs', 'install.mjs', 'verify.mjs']) {
+for (const name of ['setup.mjs', 'install.mjs', 'clients.mjs', 'verify.mjs']) {
   await copyFile(join('src', name), join('dist', name));
 }
 await chmod('dist/setup.mjs', 0o755);

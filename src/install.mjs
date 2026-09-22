@@ -5,22 +5,26 @@
 [PROTOCOL]: Preflight all targets; never put credentials in subprocess arguments, environment, or output.
 */
 import { agents, upsertServer } from 'add-mcp';
+import { parse as parseJsonc } from 'jsonc-parser';
+import { parse as parseToml } from '@iarna/toml';
+import { load as parseYaml } from 'js-yaml';
 import { spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, mkdirSync, openSync, closeSync, chmodSync, appendFileSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir, homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { parseOrigin, SetupVerificationError } from './verify.mjs';
+import { compatibleClients, skillAgent, skillPath } from './clients.mjs';
 
-export const CLIENTS = Object.freeze(['claude-code', 'cursor']);
 const USER_MESSAGES = Object.freeze({
   'unsafe-target': 'The displayed configuration path is a symlink or unexpected file type. Check it before retrying.',
-  'malformed-config': 'The displayed MCP configuration contains malformed JSON. Repair it before retrying.',
+  'malformed-config': 'The displayed MCP configuration is malformed. Repair it before retrying.',
   'unrecognized-config': 'The displayed MCP configuration has an unrecognized layout. Check it before retrying.',
   'unexpected-skill': 'The displayed skill target is not a directory. Check it before retrying.',
   'tracked-config': 'The project MCP configuration is tracked by Git. Remove it from the index before installing a key.',
+  'shared-config': 'Claude Code and Copilot CLI need a shared .mcp.json here. Move the servers from .github/mcp.json into .mcp.json under mcpServers, then retry.',
   cancelled: 'Installation cancelled; nothing changed.',
 });
 const GENERIC_MESSAGE = 'Setup could not finish. Check the selected client configuration and permissions, then retry.';
@@ -52,16 +56,65 @@ const require = createRequire(import.meta.url);
 const skillsPackagePath = require.resolve('skills/package.json');
 const skillsBin = join(dirname(skillsPackagePath), JSON.parse(readFileSync(skillsPackagePath, 'utf8')).bin.skills);
 
-export function targetPaths(client, preview, cwd = process.cwd(), home = homedir()) {
-  if (!CLIENTS.includes(client)) throw new Error('Unsupported client.');
-  const config = preview ? join(cwd, agents[client].localConfigPath) : join(home, client === 'claude-code' ? '.claude.json' : '.cursor/mcp.json');
-  const claudeDir = process.env.CLAUDE_CONFIG_DIR?.trim();
-  const skill = preview
-    ? join(cwd, client === 'claude-code' ? '.claude/skills' : '.agents/skills', 'talent-summoner-preview')
-    : client === 'claude-code'
-      ? join(claudeDir ? (claudeDir.startsWith('/') ? claudeDir : join(cwd, claudeDir)) : join(home, '.claude'), 'skills/talent-summoner')
-      : join(home, '.agents/skills/talent-summoner');
-  return { config, skill };
+export function targetPaths(client, preview, cwd = process.cwd()) {
+  if (!compatibleClients(preview).some(({ id }) => id === client)) throw new Error('Unsupported client or scope.');
+  const agent = agents[client];
+  const options = { local: preview, cwd };
+  const config = agent.resolveConfigPath?.(agent, options) || (preview ? join(cwd, agent.localConfigPath) : agent.configPath);
+  return { config, skill: skillPath(client, preview, cwd) };
+}
+
+function object(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseConfig(path, format) {
+  if (!existsSync(path)) return {};
+  const source = readFileSync(path, 'utf8');
+  if (!source.trim()) return {};
+  try {
+    let parsed;
+    if (format === 'json') {
+      const errors = [];
+      parsed = parseJsonc(source, errors, { allowTrailingComma: true });
+      if (errors.length) throw new Error('Invalid JSONC');
+    } else if (format === 'toml') parsed = parseToml(source);
+    else if (format === 'yaml') parsed = parseYaml(source);
+    else throw new Error('Unsupported format');
+    if (!object(parsed)) throw new SetupUserError('unrecognized-config');
+    return parsed;
+  } catch (error) {
+    if (error instanceof SetupUserError) throw error;
+    throw new SetupUserError('malformed-config');
+  }
+}
+
+function serverMap(client, preview, current) {
+  if (client === 'opencode') {
+    if (current.mcp === undefined) return {};
+    if (!object(current.mcp)) throw new SetupUserError('unrecognized-config');
+    const nested = current.mcp.servers;
+    if (nested !== undefined && !object(nested)) throw new SetupUserError('unrecognized-config');
+    return { ...current.mcp, ...(nested && !('type' in nested || 'url' in nested || 'command' in nested) ? nested : {}) };
+  }
+  if (client === 'github-copilot-cli' && preview && current.mcpServers === undefined) {
+    const values = Object.values(current);
+    if (values.length && values.every((value) => object(value) &&
+      ['command', 'url', 'type'].some((key) => typeof value[key] === 'string'))) return current;
+    if (object(current.servers) && Object.values(current.servers).some((value) => object(value) &&
+      ['command', 'url', 'type'].some((key) => typeof value[key] === 'string'))) {
+      throw new SetupUserError('unrecognized-config');
+    }
+  }
+  const agent = agents[client];
+  const keys = (preview && agent.localConfigKey || agent.configKey).split('.');
+  let value = current;
+  for (const key of keys) {
+    if (value[key] === undefined) return {};
+    value = value[key];
+    if (!object(value)) throw new SetupUserError('unrecognized-config');
+  }
+  return value;
 }
 
 function regularFileOrAbsent(path) {
@@ -70,20 +123,13 @@ function regularFileOrAbsent(path) {
   if (!stat.isFile()) throw new SetupUserError('unsafe-target');
 }
 
-export function inspectTarget(client, preview, cwd = process.cwd(), home = homedir()) {
-  const paths = targetPaths(client, preview, cwd, home);
+export function inspectTarget(client, preview, cwd = process.cwd()) {
+  const paths = targetPaths(client, preview, cwd);
   regularFileOrAbsent(paths.config);
-  let current = {};
-  if (existsSync(paths.config)) {
-    try { current = JSON.parse(readFileSync(paths.config, 'utf8')); }
-    catch { throw new SetupUserError('malformed-config'); }
-    if (!current || Array.isArray(current) || typeof current !== 'object' ||
-        (current.mcpServers !== undefined && (!current.mcpServers || Array.isArray(current.mcpServers) || typeof current.mcpServers !== 'object'))) {
-      throw new SetupUserError('unrecognized-config');
-    }
-  }
+  const current = parseConfig(paths.config, agents[client].format);
+  const entries = serverMap(client, preview, current);
   if (existsSync(paths.skill) && !lstatSync(paths.skill).isDirectory()) throw new SetupUserError('unexpected-skill');
-  return { ...paths, existingServer: Object.hasOwn(current.mcpServers || {}, preview ? 'talent-summoner-preview' : 'talent-summoner'), existingSkill: existsSync(paths.skill) };
+  return { ...paths, existingServer: Object.hasOwn(entries, preview ? 'talent-summoner-preview' : 'talent-summoner'), existingSkill: existsSync(paths.skill) };
 }
 
 function protectConfig(path) {
@@ -97,6 +143,11 @@ function git(cwd, args) {
 }
 
 export function protectPreviewProject(cwd, configPaths) {
+  const entries = configPaths.map((path) => {
+    const relativePath = relative(cwd, path);
+    if (!relativePath || relativePath === '..' || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) throw new SetupUserError('unsafe-target');
+    return `/${relativePath.split(sep).join('/')}`;
+  });
   if (git(cwd, ['rev-parse', '--is-inside-work-tree'])) {
     for (const path of configPaths) {
       if (git(cwd, ['ls-files', '--error-unmatch', '--', path])) {
@@ -107,7 +158,6 @@ export function protectPreviewProject(cwd, configPaths) {
   const ignore = join(cwd, '.gitignore');
   regularFileOrAbsent(ignore);
   const content = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
-  const entries = ['/.mcp.json', '/.cursor/mcp.json'];
   const missing = entries.filter((entry) => !content.split(/\r?\n/).includes(entry));
   if (missing.length) appendFileSync(ignore, `${content && !content.endsWith('\n') ? '\n' : ''}${missing.join('\n')}\n`);
 }
@@ -132,12 +182,17 @@ export async function installSkill(client, preview, cwd = process.cwd(), { runne
   try {
     if (preview) prepared = await preparePreviewSkill(origin);
     const source = prepared?.skill || dirname(bundledSkill);
-    const args = [skillsBin, 'add', source, '--agent', client, '--copy', '--yes'];
+    const args = [skillsBin, 'add', source, '--agent', skillAgent(client), '--copy', '--yes', '--json'];
     if (!preview) args.push('--global');
-    const allowedEnv = ['HOME', 'PATH', 'TMPDIR', 'TMP', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'CLAUDE_CONFIG_DIR', 'LANG', 'LC_ALL'];
+    const allowedEnv = ['HOME', 'PATH', 'TMPDIR', 'TMP', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'CLAUDE_CONFIG_DIR', 'GROK_HOME', 'LANG', 'LC_ALL'];
     const env = Object.fromEntries(allowedEnv.filter((name) => process.env[name]).map((name) => [name, process.env[name]]));
     const result = runner(process.execPath, args, { cwd, stdio: 'pipe', encoding: 'utf8', env });
     if (result.status !== 0) throw new Error('Skill installation failed. Check client permissions and retry.');
+    let records;
+    try { records = JSON.parse(result.stdout); } catch { throw new Error('Skill installation result was invalid.'); }
+    const expected = targetPaths(client, preview, cwd).skill;
+    if (!Array.isArray(records) || !records.some((record) => record.name === (preview ? 'talent-summoner-preview' : 'talent-summoner') &&
+      record.status === 'installed' && resolve(cwd, record.path) === resolve(expected))) throw new Error('Skill installation path did not match the protected target.');
   } finally {
     if (prepared) await rm(prepared.directory, { recursive: true, force: true });
   }
@@ -145,6 +200,9 @@ export async function installSkill(client, preview, cwd = process.cwd(), { runne
 
 export async function installClients({ clients, preview, cwd = process.cwd(), origin, key, bypass, confirmOverwrite, skillInstaller = installSkill, serverInstaller = upsertServer }) {
   const name = preview ? 'talent-summoner-preview' : 'talent-summoner';
+  if (preview && clients.includes('claude-code') && existsSync(join(cwd, '.github/mcp.json')) && !existsSync(join(cwd, '.mcp.json'))) {
+    throw new SetupUserError('shared-config');
+  }
   const inspected = clients.map((client) => ({ client, ...inspectTarget(client, preview, cwd) }));
   const replacements = inspected.filter((target) => target.existingServer || target.existingSkill);
   if (replacements.length && !(await confirmOverwrite(replacements))) throw new SetupUserError('cancelled');
@@ -153,12 +211,14 @@ export async function installClients({ clients, preview, cwd = process.cwd(), or
   for (const target of inspected) {
     let mcpConfigured = false;
     try {
+      if (targetPaths(target.client, preview, cwd).config !== target.config) throw new Error('Configuration target changed during setup.');
       protectConfig(target.config);
       const headers = { Authorization: `Bearer ${key}` };
       if (bypass) headers['x-vercel-protection-bypass'] = bypass;
       const result = serverInstaller(target.client, name, { type: 'http', url: `${origin}/api/mcp`, headers }, { local: preview, cwd });
       if (!result.success) throw new Error('Native MCP configuration failed.');
       mcpConfigured = true;
+      if (resolve(result.path) !== resolve(target.config) || result.extraPaths?.length) throw new Error('Unexpected native configuration path.');
       chmodSync(target.config, 0o600);
     } catch {
       results.push({ client: target.client, success: false, mcpConfigured, status: mcpConfigured ? 'mcp-configured-setup-incomplete' : 'mcp-not-configured', config: target.config, skill: target.skill });
