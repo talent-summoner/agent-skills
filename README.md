@@ -4,7 +4,7 @@ Connect your coding agent to Talent Summoner with an API key, the sourcing skill
 
 ## Preview release
 
-The preview installer is available as **`0.1.0-next.2`** on the npm `next` channel. It was published through GitHub OIDC, with Linux/macOS package checks and a verified registry tarball. Production onboarding remains disabled until the production MCP endpoint ships.
+The preview installer is currently available as **`0.1.0-next.2`** on the npm `next` channel. It was published through GitHub OIDC, with Linux/macOS package checks and a verified registry tarball. Version `0.1.0-next.3` is prepared for release. Production onboarding remains disabled until the production MCP endpoint ships.
 
 From a dedicated QA directory, connect to a preview deployment:
 
@@ -48,7 +48,7 @@ npm run build
 npm test
 node scripts/verify-package.mjs
 npm pack
-npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.2.tgz -- talent-summoner-setup --preview
+npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.3.tgz -- talent-summoner-setup --preview
 ```
 
 The npm `next` tag selects an installer prerelease. `--preview` independently selects a non-production backend; no new package version is needed for every app preview. Preview credentials are runtime inputs, never built into the package.

@@ -80,6 +80,8 @@ jobs:
       - name: Wait for registry availability (retry this job only)
         run: |
           version="$(node -p 'require("./package.json").version')"
+          consumer="$(mktemp -d "${RUNNER_TEMP}/setup-availability-XXXXXX")"
+          cd "$consumer"
           for attempt in $(seq 1 60); do
             if npm view "@talent-summoner/setup@$version" dist.tarball >/dev/null 2>&1; then
               npm exec --yes --cache "${RUNNER_TEMP}/published-cache" --package="@talent-summoner/setup@$version" -- talent-summoner-setup --help && exit 0
