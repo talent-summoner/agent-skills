@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /*
 [INPUT]: One upstream-backed client selection, website origin, and masked secrets.
-[OUTPUT]: Terminal-sized, non-wrapping client selection followed by verified native MCP configuration and skill copies.
+[OUTPUT]: Terminal-sized client selection, prominent API-key guidance, then verified installation with file destinations.
 [POS]: Sole public executable of @talent-summoner/setup.
 [PROTOCOL]: No secret flags, logging, child arguments/environment, or paid tool calls.
 */
 import { checkbox, confirm, input, password } from '@inquirer/prompts';
+import { styleText } from 'node:util';
 import { describeSetupFailure, installClients, targetPaths } from './install.mjs';
 import { clientChoices } from './clients.mjs';
 import { parseOrigin, verifyConnection } from './verify.mjs';
@@ -39,21 +40,21 @@ try {
     ? parseOrigin(await input({ message: 'Preview website HTTPS origin:', validate: (value) => { try { parseOrigin(value); return true; } catch { return 'Enter an HTTPS origin with no path, query, fragment, or username.'; } } }))
     : 'https://talentsummoner.com';
   const name = preview ? 'talent-summoner-preview' : 'talent-summoner';
-  console.log(`Website: ${origin}`);
-  console.log(`Create an API key on this website: ${origin}/settings/apikeys`);
-  console.log(`MCP endpoint: ${origin}/api/mcp`);
-  console.log(`Install scope: ${preview ? 'current project' : 'user'}; server and skill: ${name}`);
-  for (const client of clients) {
-    const paths = targetPaths(client, preview);
-    console.log(`${client}: ${paths.config} and ${paths.skill}`);
-  }
-  const key = await password({ message: 'Paste the raw API key (hidden):', mask: '*', validate: (value) => value && !/^Bearer\s/i.test(value) && !/\s/.test(value) ? true : 'Paste only the raw key, with no spaces or Bearer prefix.' });
+  console.log(styleText('bold', '\nNext: Create an API key'));
+  console.log('Open this page, sign in, and create a key:');
+  console.log(`${origin}/settings/apikeys\n`);
+  const key = await password({ message: 'Paste your API key here (hidden):', mask: '*', validate: (value) => value && !/^Bearer\s/i.test(value) && !/\s/.test(value) ? true : 'Paste only the raw key, with no spaces or Bearer prefix.' });
   let bypass;
   if (preview && await confirm({ message: 'Does this preview need a Vercel protection bypass secret?', default: false })) {
     bypass = await password({ message: 'Vercel protection bypass secret (hidden):', mask: '*', validate: (value) => value ? true : 'Enter the bypass secret.' });
   }
   console.log('Checking your Talent Summoner connection…');
   await verifyConnection({ origin, key, bypass });
+  console.log(`\nInstallation files (${preview ? 'this project' : 'your user account'}):`);
+  for (const client of clients) {
+    const paths = targetPaths(client, preview);
+    console.log(`${client}:\n  MCP: ${paths.config}\n  Skill: ${paths.skill}`);
+  }
   const results = await installClients({
     clients, preview, origin, key, bypass,
     confirmOverwrite: async (targets) => confirm({

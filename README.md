@@ -4,7 +4,7 @@ Connect your assistant to Talent Summoner with an API key, the sourcing skill an
 
 ## Preview release
 
-This source prepares **`0.1.0-next.5`**, improving the client picker. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
+This source prepares **`0.1.0-next.6`**, making API-key setup the clear next step. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
 
 From a dedicated QA directory, connect to a preview deployment:
 
@@ -12,7 +12,7 @@ From a dedicated QA directory, connect to a preview deployment:
 npx @talent-summoner/setup@next --preview
 ```
 
-Select your apps, enter the preview website origin, create an API key on that website, then paste it into the hidden terminal prompt. Protected Vercel deployments also need their automation bypass secret. Never paste either secret into agent chat or add it to the command line.
+Select your apps and enter the preview website origin. Setup then shows **Next: Create an API key**, with a direct settings link immediately above the hidden key input. Open the link, sign in, create a key, and paste it into the prompt. Installation file paths appear after the connection check, before any files are changed. Protected Vercel deployments also need their automation bypass secret. Never paste either secret into agent chat or add it to the command line.
 
 The preview server and skill are named `talent-summoner-preview`, installed in the current project. Use an isolated client profile/account for QA: project configuration can coexist with user-level production tools. Verify that only preview sourcing tools are loaded before taking actions.
 
@@ -54,7 +54,7 @@ npm run build
 npm test
 node scripts/verify-package.mjs
 npm pack
-npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.5.tgz -- talent-summoner-setup --preview
+npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.6.tgz -- talent-summoner-setup --preview
 ```
 
 The npm `next` tag selects an installer prerelease. `--preview` independently selects a non-production backend; no new package version is needed for every app preview. Preview credentials are runtime inputs, never built into the package.
