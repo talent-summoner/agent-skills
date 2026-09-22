@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
 [INPUT]: One upstream-backed client selection, website origin, and masked secrets.
-[OUTPUT]: Verified native MCP configuration and independently copied skill for each client.
+[OUTPUT]: Terminal-sized, non-wrapping client selection followed by verified native MCP configuration and skill copies.
 [POS]: Sole public executable of @talent-summoner/setup.
 [PROTOCOL]: No secret flags, logging, child arguments/environment, or paid tool calls.
 */
@@ -26,7 +26,15 @@ if (process.platform === 'win32') {
   process.exit(2);
 }
 try {
-  const clients = await checkbox({ message: 'Install for which apps?', choices: await clientChoices(preview), required: true });
+  const choices = await clientChoices(preview);
+  const clients = await checkbox({
+    message: 'Install for which apps?',
+    choices,
+    required: true,
+    // Reserve room for the question, validation and keyboard hints when opening.
+    pageSize: Math.min(choices.length, Math.max(1, (process.stdout.rows ?? 13) - 6)),
+    loop: false,
+  });
   const origin = preview
     ? parseOrigin(await input({ message: 'Preview website HTTPS origin:', validate: (value) => { try { parseOrigin(value); return true; } catch { return 'Enter an HTTPS origin with no path, query, fragment, or username.'; } } }))
     : 'https://talentsummoner.com';

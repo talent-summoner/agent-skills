@@ -4,7 +4,7 @@ Connect your assistant to Talent Summoner with an API key, the sourcing skill an
 
 ## Preview release
 
-This source prepares **`0.1.0-next.4`**, the client-discovery expansion. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
+This source prepares **`0.1.0-next.5`**, improving the client picker. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
 
 From a dedicated QA directory, connect to a preview deployment:
 
@@ -17,6 +17,8 @@ Select your apps, enter the preview website origin, create an API key on that we
 The preview server and skill are named `talent-summoner-preview`, installed in the current project. Use an isolated client profile/account for QA: project configuration can coexist with user-level production tools. Verify that only preview sourcing tools are loaded before taking actions.
 
 Version `0.1.0-next.4` uses one picker: detected compatible apps are preselected, other compatible clients remain selectable, and nothing is selected if discovery finds none. The pinned upstream catalogs provide 18 user-scope and 13 project-preview choices. Setup checks the connection and writes each client's native configuration and skill. It ends with: **Open or restart any app you set up, then ask: “Show my Talent Summoner sourcing sessions.”**
+
+Version `0.1.0-next.5` sizes the picker to the terminal height when it opens, leaving room for the question and controls. Navigation stops at the first and last app; small terminals scroll within those boundaries. Resizing an already-open picker is not part of this change.
 
 The bounded live-test cohort is Claude Code, Copilot CLI, OpenCode, Codex and Cursor Agent CLIs on Linux; VS Code has configuration fixtures. Other compatible clients use upstream installation support without an individual live-test claim. Editor, browser and macOS native-client behavior are separate from CLI/package checks.
 
@@ -52,7 +54,7 @@ npm run build
 npm test
 node scripts/verify-package.mjs
 npm pack
-npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.4.tgz -- talent-summoner-setup --preview
+npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.5.tgz -- talent-summoner-setup --preview
 ```
 
 The npm `next` tag selects an installer prerelease. `--preview` independently selects a non-production backend; no new package version is needed for every app preview. Preview credentials are runtime inputs, never built into the package.
