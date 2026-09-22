@@ -4,7 +4,7 @@ Connect your coding agent to Talent Summoner with an API key, the sourcing skill
 
 ## Preview release
 
-The preview installer is currently available as **`0.1.0-next.2`** on the npm `next` channel. It was published through GitHub OIDC, with Linux/macOS package checks and a verified registry tarball. Version `0.1.0-next.3` is prepared for release. Production onboarding remains disabled until the production MCP endpoint ships.
+The preview installer is available as **`0.1.0-next.3`** on the npm `next` channel. The [release workflow](https://github.com/talent-summoner/agent-skills/actions/runs/35696423543) passed Linux/macOS package checks, GitHub OIDC publication and fresh-consumer registry installation. Production onboarding remains disabled until the production MCP endpoint ships.
 
 From a dedicated QA directory, connect to a preview deployment:
 
@@ -57,7 +57,7 @@ The canonical skill is maintained with the application. `skill-source.json` reco
 
 ## Publishing
 
-Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA. Version `0.1.0-next.2` completed OIDC publication and is installable. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
+Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA. Version `0.1.0-next.3` completed OIDC publication and is installable. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
 
 Version tags must match package.json. Prereleases publish to `next`; stable versions publish to `latest`. npm scans releases before installation becomes available. The workflow checks availability with bounded retries; a pending scan requires rerunning only the separate `availability` job, not the publish job or the same version.
 
