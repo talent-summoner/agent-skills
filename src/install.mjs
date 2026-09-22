@@ -1,0 +1,175 @@
+/*
+[INPUT]: Verified connection, chosen clients, bundled skill, and explicit replacement decision.
+[OUTPUT]: Native private MCP entries and copied client skills with per-client results.
+[POS]: Client-neutral installer orchestration over pinned add-mcp and skills APIs.
+[PROTOCOL]: Preflight all targets; never put credentials in subprocess arguments, environment, or output.
+*/
+import { agents, upsertServer } from 'add-mcp';
+import { spawnSync } from 'node:child_process';
+import { existsSync, lstatSync, readFileSync, mkdirSync, openSync, closeSync, chmodSync, appendFileSync } from 'node:fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir, homedir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import { parseOrigin, SetupVerificationError } from './verify.mjs';
+
+export const CLIENTS = Object.freeze(['claude-code', 'cursor']);
+const USER_MESSAGES = Object.freeze({
+  'unsafe-target': 'The displayed configuration path is a symlink or unexpected file type. Check it before retrying.',
+  'malformed-config': 'The displayed MCP configuration contains malformed JSON. Repair it before retrying.',
+  'unrecognized-config': 'The displayed MCP configuration has an unrecognized layout. Check it before retrying.',
+  'unexpected-skill': 'The displayed skill target is not a directory. Check it before retrying.',
+  'tracked-config': 'The project MCP configuration is tracked by Git. Remove it from the index before installing a key.',
+  cancelled: 'Installation cancelled; nothing changed.',
+});
+const GENERIC_MESSAGE = 'Setup could not finish. Check the selected client configuration and permissions, then retry.';
+const VERIFICATION_MESSAGES = new Set([
+  'MCP verification failed or the seven expected tools were unavailable. Check the endpoint and retry.',
+  'MCP redirected to another origin; no credentials were sent there.',
+  'MCP redirected unexpectedly. Check the website origin.',
+  'The API key was rejected. Create a key on the displayed website origin and retry.',
+  'The deployment appears protected. Use its preview protection bypass secret, or check access to the preview URL.',
+]);
+export class SetupUserError extends Error {
+  constructor(code) {
+    super(USER_MESSAGES[code] || GENERIC_MESSAGE);
+    this.code = code;
+  }
+}
+
+export function describeSetupFailure(error) {
+  if (error instanceof SetupUserError && Object.hasOwn(USER_MESSAGES, error.code)) {
+    return { message: error.message, exitCode: error.code === 'cancelled' ? 0 : 1 };
+  }
+  if (error instanceof SetupVerificationError && VERIFICATION_MESSAGES.has(error.message)) {
+    return { message: error.message, exitCode: 1 };
+  }
+  return { message: GENERIC_MESSAGE, exitCode: 1 };
+}
+const bundledSkill = fileURLToPath(new URL('../skills/talent-summoner/SKILL.md', import.meta.url));
+const require = createRequire(import.meta.url);
+const skillsPackagePath = require.resolve('skills/package.json');
+const skillsBin = join(dirname(skillsPackagePath), JSON.parse(readFileSync(skillsPackagePath, 'utf8')).bin.skills);
+
+export function targetPaths(client, preview, cwd = process.cwd(), home = homedir()) {
+  if (!CLIENTS.includes(client)) throw new Error('Unsupported client.');
+  const config = preview ? join(cwd, agents[client].localConfigPath) : join(home, client === 'claude-code' ? '.claude.json' : '.cursor/mcp.json');
+  const claudeDir = process.env.CLAUDE_CONFIG_DIR?.trim();
+  const skill = preview
+    ? join(cwd, client === 'claude-code' ? '.claude/skills' : '.agents/skills', 'talent-summoner-preview')
+    : client === 'claude-code'
+      ? join(claudeDir ? (claudeDir.startsWith('/') ? claudeDir : join(cwd, claudeDir)) : join(home, '.claude'), 'skills/talent-summoner')
+      : join(home, '.agents/skills/talent-summoner');
+  return { config, skill };
+}
+
+function regularFileOrAbsent(path) {
+  if (!existsSync(path)) return;
+  const stat = lstatSync(path);
+  if (!stat.isFile()) throw new SetupUserError('unsafe-target');
+}
+
+export function inspectTarget(client, preview, cwd = process.cwd(), home = homedir()) {
+  const paths = targetPaths(client, preview, cwd, home);
+  regularFileOrAbsent(paths.config);
+  let current = {};
+  if (existsSync(paths.config)) {
+    try { current = JSON.parse(readFileSync(paths.config, 'utf8')); }
+    catch { throw new SetupUserError('malformed-config'); }
+    if (!current || Array.isArray(current) || typeof current !== 'object' ||
+        (current.mcpServers !== undefined && (!current.mcpServers || Array.isArray(current.mcpServers) || typeof current.mcpServers !== 'object'))) {
+      throw new SetupUserError('unrecognized-config');
+    }
+  }
+  if (existsSync(paths.skill) && !lstatSync(paths.skill).isDirectory()) throw new SetupUserError('unexpected-skill');
+  return { ...paths, existingServer: Object.hasOwn(current.mcpServers || {}, preview ? 'talent-summoner-preview' : 'talent-summoner'), existingSkill: existsSync(paths.skill) };
+}
+
+function protectConfig(path) {
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  if (!existsSync(path)) closeSync(openSync(path, 'wx', 0o600));
+  chmodSync(path, 0o600);
+}
+
+function git(cwd, args) {
+  return spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: 'ignore' }).status === 0;
+}
+
+export function protectPreviewProject(cwd, configPaths) {
+  if (git(cwd, ['rev-parse', '--is-inside-work-tree'])) {
+    for (const path of configPaths) {
+      if (git(cwd, ['ls-files', '--error-unmatch', '--', path])) {
+        throw new SetupUserError('tracked-config');
+      }
+    }
+  }
+  const ignore = join(cwd, '.gitignore');
+  regularFileOrAbsent(ignore);
+  const content = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
+  const entries = ['/.mcp.json', '/.cursor/mcp.json'];
+  const missing = entries.filter((entry) => !content.split(/\r?\n/).includes(entry));
+  if (missing.length) appendFileSync(ignore, `${content && !content.endsWith('\n') ? '\n' : ''}${missing.join('\n')}\n`);
+}
+
+export async function preparePreviewSkill(origin) {
+  const previewOrigin = parseOrigin(origin);
+  const directory = await mkdtemp(join(tmpdir(), 'talent-summoner-skill-'));
+  const skill = join(directory, 'talent-summoner-preview');
+  mkdirSync(skill, { mode: 0o700 });
+  const source = await readFile(bundledSkill, 'utf8');
+  if (!source.startsWith('---\nname: talent-summoner\n')) throw new Error('Bundled skill has an unexpected frontmatter.');
+  const rendered = source.replace('name: talent-summoner\n', 'name: talent-summoner-preview\n').replace(
+    '\n# Talent Summoner\n',
+    `\n# Talent Summoner Preview\n\nThis skill is for the current project preview only. Use only the \`talent-summoner-preview\` MCP server at ${previewOrigin}/api/mcp. Before any sourcing or Role action, confirm that this preview server is connected. If only production tools are available, stop and ask the user to reconnect the preview server. Never substitute production tools.\n`,
+  );
+  await writeFile(join(skill, 'SKILL.md'), rendered, { mode: 0o600 });
+  return { directory, skill };
+}
+
+export async function installSkill(client, preview, cwd = process.cwd(), { runner = spawnSync, origin } = {}) {
+  let prepared;
+  try {
+    if (preview) prepared = await preparePreviewSkill(origin);
+    const source = prepared?.skill || dirname(bundledSkill);
+    const args = [skillsBin, 'add', source, '--agent', client, '--copy', '--yes'];
+    if (!preview) args.push('--global');
+    const allowedEnv = ['HOME', 'PATH', 'TMPDIR', 'TMP', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'CLAUDE_CONFIG_DIR', 'LANG', 'LC_ALL'];
+    const env = Object.fromEntries(allowedEnv.filter((name) => process.env[name]).map((name) => [name, process.env[name]]));
+    const result = runner(process.execPath, args, { cwd, stdio: 'pipe', encoding: 'utf8', env });
+    if (result.status !== 0) throw new Error('Skill installation failed. Check client permissions and retry.');
+  } finally {
+    if (prepared) await rm(prepared.directory, { recursive: true, force: true });
+  }
+}
+
+export async function installClients({ clients, preview, cwd = process.cwd(), origin, key, bypass, confirmOverwrite, skillInstaller = installSkill, serverInstaller = upsertServer }) {
+  const name = preview ? 'talent-summoner-preview' : 'talent-summoner';
+  const inspected = clients.map((client) => ({ client, ...inspectTarget(client, preview, cwd) }));
+  const replacements = inspected.filter((target) => target.existingServer || target.existingSkill);
+  if (replacements.length && !(await confirmOverwrite(replacements))) throw new SetupUserError('cancelled');
+  if (preview) protectPreviewProject(cwd, inspected.map((target) => target.config));
+  const results = [];
+  for (const target of inspected) {
+    let mcpConfigured = false;
+    try {
+      protectConfig(target.config);
+      const headers = { Authorization: `Bearer ${key}` };
+      if (bypass) headers['x-vercel-protection-bypass'] = bypass;
+      const result = serverInstaller(target.client, name, { type: 'http', url: `${origin}/api/mcp`, headers }, { local: preview, cwd });
+      if (!result.success) throw new Error('Native MCP configuration failed.');
+      mcpConfigured = true;
+      chmodSync(target.config, 0o600);
+    } catch {
+      results.push({ client: target.client, success: false, mcpConfigured, status: mcpConfigured ? 'mcp-configured-setup-incomplete' : 'mcp-not-configured', config: target.config, skill: target.skill });
+      continue;
+    }
+    try {
+      await skillInstaller(target.client, preview, cwd, { origin });
+      results.push({ client: target.client, success: true, mcpConfigured: true, status: 'installed', config: target.config, skill: target.skill });
+    } catch {
+      results.push({ client: target.client, success: false, mcpConfigured: true, status: 'mcp-configured-skill-failed', config: target.config, skill: target.skill });
+    }
+  }
+  return results;
+}

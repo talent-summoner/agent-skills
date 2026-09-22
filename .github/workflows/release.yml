@@ -1,0 +1,90 @@
+# [INPUT]: Committed package/lockfile, canonical skill export and version tags.
+# [OUTPUT]: Linux/macOS package verification; reviewed tag publication with OIDC.
+# [POS]: Public installer CI/release, independent of the application's deployment.
+# [PROTOCOL]: No long-lived npm token or install-script exceptions; publish only the verified tarball.
+name: Verify and release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.15.0
+          package-manager-cache: false
+      - run: npm install --global npm@12.0.2
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: node scripts/verify-package.mjs
+      - name: Smoke packed executable with default npm policy
+        run: |
+          archive="$(find "$PWD/artifacts" -name '*.tgz' -print -quit)"
+          npm exec --yes --cache "${RUNNER_TEMP}/setup-npm-cache" --package="$archive" -- talent-summoner-setup --help
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: npm-package
+          path: artifacts/*.tgz
+          if-no-files-found: error
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.15.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global npm@12.0.2
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: npm-package
+          path: artifacts
+      - name: Publish verified version
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          test "$RELEASE_REF" = "v$version"
+          tag=latest
+          case "$version" in *-*) tag=next;; esac
+          npm publish "./artifacts/talent-summoner-setup-$version.tgz" --access public --tag "$tag" --provenance
+  availability:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.15.0
+          package-manager-cache: false
+      - run: npm install --global npm@12.0.2
+      - name: Wait for registry availability (retry this job only)
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          for attempt in $(seq 1 60); do
+            if npm view "@talent-summoner/setup@$version" dist.tarball >/dev/null 2>&1; then
+              npm exec --yes --cache "${RUNNER_TEMP}/published-cache" --package="@talent-summoner/setup@$version" -- talent-summoner-setup --help && exit 0
+            fi
+            sleep 30
+          done
+          echo 'Registry availability is still pending. Rerun only the availability job after the scan clears; do not republish this version.' >&2
+          exit 1
