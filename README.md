@@ -4,9 +4,9 @@ Connect your coding agent to Talent Summoner with an API key, the sourcing skill
 
 ## Preview release
 
-The `0.1.0-next.1` bootstrap publish was accepted by npm, but registry scanning and download availability are still pending. Use the local package instructions below until npm serves the prerelease. Production onboarding remains disabled until the production MCP endpoint ships.
+The preview installer is available as **`0.1.0-next.2`** on the npm `next` channel. It was published through GitHub OIDC, with Linux/macOS package checks and a verified registry tarball. Production onboarding remains disabled until the production MCP endpoint ships.
 
-After npm makes the prerelease available, test a preview deployment from a dedicated QA directory:
+From a dedicated QA directory, connect to a preview deployment:
 
 ```sh
 npx @talent-summoner/setup@next --preview
@@ -23,6 +23,8 @@ After the stable release and production endpoint are available, run from any dir
 ```sh
 npx @talent-summoner/setup
 ```
+
+For now, use `@next --preview`: npm’s bootstrap `latest` alias still resolves to a prerelease. A stable release must verify the `latest` mapping before enabling customer onboarding.
 
 The command selects supported clients once, links to API-key settings, checks the connection and installs the skill plus MCP configuration at user scope. Reconnect the client, then ask: **Use Talent Summoner to list my sourcing sessions.** Setup itself never starts sourcing or spends a Role.
 
@@ -55,7 +57,7 @@ The canonical skill is maintained with the application. `skill-source.json` reco
 
 ## Publishing
 
-Build and verify the exact tarball before publishing. The first prerelease was accepted through interactive npm 2FA and remains subject to registry scanning before download. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
+Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA. Version `0.1.0-next.2` completed OIDC publication and is installable. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
 
 Version tags must match package.json. Prereleases publish to `next`; stable versions publish to `latest`. npm scans releases before installation becomes available. The workflow checks availability with bounded retries; a pending scan requires rerunning only the separate `availability` job, not the publish job or the same version.
 
