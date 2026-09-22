@@ -4,7 +4,7 @@ Connect your assistant to Talent Summoner with an API key, the sourcing skill an
 
 ## Preview release
 
-This source prepares **`0.1.0-next.6`**, making API-key setup the clear next step. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
+This source prepares **`0.1.0-next.7`**, directing sender connection to outreach settings on the session's website. Review, confirmation and sending still use the sourcing session. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
 
 From a dedicated QA directory, connect to a preview deployment:
 
@@ -54,7 +54,7 @@ npm run build
 npm test
 node scripts/verify-package.mjs
 npm pack
-npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.6.tgz -- talent-summoner-setup --preview
+npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.7.tgz -- talent-summoner-setup --preview
 ```
 
 The npm `next` tag selects an installer prerelease. `--preview` independently selects a non-production backend; no new package version is needed for every app preview. Preview credentials are runtime inputs, never built into the package.
