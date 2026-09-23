@@ -17,7 +17,7 @@ if (args.includes('--help') || args.includes('-h')) {
   process.exit(0);
 }
 if (args.some((arg) => arg !== '--preview') || args.filter((arg) => arg === '--preview').length > 1) {
-  console.error('Only --preview is supported. API keys must be entered in the masked prompt.');
+  console.error('Unknown or repeated option. Usage: talent-summoner-setup [--preview]. Enter API keys only in the masked prompt.');
   process.exit(2);
 }
 
