@@ -148,8 +148,10 @@ export function setPrivateConfigAccess(path) {
     '$acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($identity, [Security.AccessControl.FileSystemRights]::FullControl, [Security.AccessControl.AccessControlType]::Allow))',
     '[IO.File]::SetAccessControl($path, $acl)',
   ].join('; ');
+  const allowedEnv = ['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'TEMP', 'TMP', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'HOMEDRIVE', 'HOMEPATH'];
+  const env = Object.fromEntries(allowedEnv.filter((name) => process.env[name]).map((name) => [name, process.env[name]]));
   const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
-    env: { ...process.env, TALENT_SUMMONER_CONFIG_PATH: path },
+    env: { ...env, TALENT_SUMMONER_CONFIG_PATH: path },
     encoding: 'utf8', windowsHide: true,
   });
   if (result.status !== 0) {

@@ -30,10 +30,26 @@ jobs:
       - run: npm test
       - run: node scripts/verify-package.mjs
       - name: Smoke packed executable with default npm policy
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           archive="$(find "$PWD/artifacts" -name '*.tgz' -print -quit)"
           npm exec --yes --cache "${RUNNER_TEMP}/setup-npm-cache" --package="$archive" -- talent-summoner-setup --help
+      - name: Smoke packed executable in PowerShell
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $archive = (Get-ChildItem artifacts -Filter *.tgz | Select-Object -First 1).FullName
+          npm exec --yes --cache "$env:RUNNER_TEMP\setup-pwsh-cache" --package="$archive" -- talent-summoner-setup --help
+      - name: Smoke packed executable in Command Prompt
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          if not exist artifacts\*.tgz exit /b 1
+          for %%F in (artifacts\*.tgz) do (
+            npm exec --yes --cache "%RUNNER_TEMP%\setup-cmd-cache" --package="%%~fF" -- talent-summoner-setup --help
+            if errorlevel 1 exit /b 1
+          )
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: matrix.os == 'ubuntu-latest'
         with:

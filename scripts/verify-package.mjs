@@ -34,7 +34,7 @@ const result = JSON.parse(runNpm(['pack', '--json', '--pack-destination', 'artif
 const pack = Array.isArray(result) ? result[0] : Object.values(result)[0];
 assert.ok(pack.filename && !pack.filename.includes('/'));
 const archive = resolve('artifacts', pack.filename);
-const files = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n');
+const files = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split(/\r?\n/);
 const metadata = new Set(['package/package.json', 'package/README.md', 'package/LICENSE', 'package/skill-source.json', 'package/skills/talent-summoner/SKILL.md']);
 for (const file of files) {
   assert.ok(metadata.has(file) || /^package\/dist\/[a-zA-Z0-9_/-]+\.mjs$/.test(file), `Unexpected packed file: ${file}`);
