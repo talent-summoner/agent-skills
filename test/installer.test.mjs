@@ -25,12 +25,12 @@ function assertPrivateConfig(path) {
   }
   const script = [
     "$ErrorActionPreference = 'Stop'",
-    '$acl = Get-Acl -LiteralPath $env:TALENT_SUMMONER_TEST_CONFIG_PATH',
+    '$acl = [IO.File]::GetAccessControl($env:TALENT_SUMMONER_TEST_CONFIG_PATH)',
     'if (-not $acl.AreAccessRulesProtected) { exit 1 }',
     '$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value',
-    '$rules = @($acl.Access)',
+    '$rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))',
     'if ($rules.Count -eq 0) { exit 1 }',
-    'foreach ($rule in $rules) { if ($rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -ne $sid -or $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow) { exit 1 } }',
+    'foreach ($rule in $rules) { if ($rule.IdentityReference.Value -ne $sid -or $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow) { exit 1 } }',
   ].join('; ');
   const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
     env: { ...process.env, TALENT_SUMMONER_TEST_CONFIG_PATH: path },

@@ -142,11 +142,11 @@ export function setPrivateConfigAccess(path) {
     "$ErrorActionPreference = 'Stop'",
     '$path = $env:TALENT_SUMMONER_CONFIG_PATH',
     '$identity = [Security.Principal.WindowsIdentity]::GetCurrent().User',
-    '$acl = Get-Acl -LiteralPath $path',
+    '$acl = [IO.File]::GetAccessControl($path)',
     '$acl.SetAccessRuleProtection($true, $false)',
-    'foreach ($rule in @($acl.Access)) { [void]$acl.RemoveAccessRuleAll($rule) }',
+    'foreach ($rule in @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))) { [void]$acl.RemoveAccessRuleAll($rule) }',
     '$acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($identity, [Security.AccessControl.FileSystemRights]::FullControl, [Security.AccessControl.AccessControlType]::Allow))',
-    'Set-Acl -LiteralPath $path -AclObject $acl',
+    '[IO.File]::SetAccessControl($path, $acl)',
   ].join('; ');
   const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
     env: { ...process.env, TALENT_SUMMONER_CONFIG_PATH: path },
