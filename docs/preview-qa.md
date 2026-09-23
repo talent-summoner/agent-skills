@@ -1,12 +1,12 @@
 # Preview deployment QA
 
-Use a dedicated QA directory and an isolated client profile or account. Project configuration can coexist with user-level production tools, so verify that only preview sourcing tools are loaded before taking actions.
+Use a dedicated QA directory and an isolated AI agent profile or account. Project configuration can coexist with user-level production tools, so verify that only preview sourcing tools are loaded before taking actions.
 
 ```sh
 npx @talent-summoner/setup --preview
 ```
 
-Select your apps and enter the preview website's HTTPS origin. Create an API key on that same preview website and paste it into the hidden prompt. If Vercel protects the deployment, enter its automation bypass secret when prompted. Keep both secrets out of agent chats, command-line arguments, and Git.
+Select your AI agents and enter the preview website's HTTPS origin. Create an API key on that same preview website and paste it into the hidden prompt. If Vercel protects the deployment, enter its automation bypass secret when prompted. Keep both secrets out of AI agent chats, command-line arguments, and Git.
 
 Setup checks the connection and displays installation paths before writing files. The server and skill are named `talent-summoner-preview` and installed in the current project. The installer refuses tracked MCP configuration files and adds generated project configuration paths to `.gitignore`.
 

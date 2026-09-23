@@ -29,7 +29,7 @@ if (process.platform === 'win32') {
 try {
   const choices = await clientChoices(preview);
   const clients = await checkbox({
-    message: 'Install for which apps?',
+    message: 'Install for which AI agents?',
     choices,
     required: true,
     // Reserve room for the question, validation and keyboard hints when opening.
@@ -71,7 +71,7 @@ try {
     } else console.log(`${result.client}: MCP entry was not configured; check permissions/configuration and rerun.`);
   }
   if (results.some((result) => !result.success)) process.exitCode = 1;
-  else console.log('Open or restart any app you set up, then ask: “Show my Talent Summoner sourcing sessions.”');
+  else console.log('Open or restart each AI agent you set up, then ask: “Show my Talent Summoner sourcing sessions.”');
 } catch (error) {
   const failure = describeSetupFailure(error);
   if (failure.exitCode === 0) console.log(failure.message);

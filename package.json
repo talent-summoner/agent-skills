@@ -2,7 +2,7 @@
   "name": "@talent-summoner/setup",
   "version": "0.1.0",
   "type": "module",
-  "description": "Connect AI assistants to Talent Summoner sourcing tools and skill",
+  "description": "Connect AI agents to Talent Summoner sourcing tools and skill",
   "keywords": [
     "talent-summoner",
     "mcp",

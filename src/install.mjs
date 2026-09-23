@@ -27,7 +27,7 @@ const USER_MESSAGES = Object.freeze({
   'shared-config': 'Claude Code and Copilot CLI need a shared .mcp.json here. Move the servers from .github/mcp.json into .mcp.json under mcpServers, then retry.',
   cancelled: 'Installation cancelled; nothing changed.',
 });
-const GENERIC_MESSAGE = 'Setup could not finish. Check the selected client configuration and permissions, then retry.';
+const GENERIC_MESSAGE = 'Setup could not finish. Check the selected AI agent configuration and permissions, then retry.';
 const VERIFICATION_MESSAGES = new Set([
   'MCP verification failed or the seven expected tools were unavailable. Check the endpoint and retry.',
   'MCP redirected to another origin; no credentials were sent there.',

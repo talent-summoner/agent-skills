@@ -1,20 +1,22 @@
 # Talent Summoner for AI agents
 
-Connect your AI assistant to [Talent Summoner](https://talentsummoner.com) to source and review hiring candidates. The Model Context Protocol (MCP) connection gives your assistant sourcing tools, and the companion skill guides it through the workflow.
+Connect your AI agent to [Talent Summoner](https://talentsummoner.com) to source and review hiring candidates. The Model Context Protocol (MCP) connection gives your AI agent sourcing tools, and the companion skill guides it through the workflow.
 
 ## Quick start
 
 1. Sign in to Talent Summoner and [create an API key](https://talentsummoner.com/settings/apikeys).
-2. In an interactive macOS, Linux, or WSL terminal with Node.js 22.20 or newer, run:
+2. For guided setup, use an interactive macOS, Linux, or WSL terminal with Node.js 22.20 or newer:
 
    ```sh
    npx @talent-summoner/setup
    ```
 
-3. Select your AI app, paste the key into the hidden terminal prompt, and let setup check the connection. It installs the MCP connection and skill for the apps you select.
-4. Open or restart your app, approve the connection if prompted, and ask: **“Show my Talent Summoner sourcing sessions.”**
+3. Select your AI agents, paste the key into the hidden terminal prompt, and let setup check the connection. It installs the MCP connection and skill for the AI agents you select.
+4. Open or restart each AI agent, approve the connection if prompted, and ask: **“Show my Talent Summoner sourcing sessions.”**
 
-Keep your API key out of agent chats, shell commands, and Git. Setup itself does not start sourcing or use a Role.
+Keep your API key out of AI agent chats, shell commands, and Git. Setup itself does not start sourcing or use a Role.
+
+Using Windows PowerShell or Command Prompt? See [install the skill separately](#install-the-skill-separately).
 
 ## What you can do
 
@@ -23,23 +25,25 @@ Keep your API key out of agent chats, shell commands, and Git. Setup itself does
 - Review and shortlist candidates, and request work-email lookups.
 - Prepare outreach drafts for shortlisted candidates.
 
-Your assistant asks before unlocking a Role for a session. You review and confirm outreach on the Talent Summoner website before sending.
+Your AI agent asks before unlocking a Role for a session. You review and confirm outreach on the Talent Summoner website before sending.
 
 ## Manage your connection
 
-Rerun `npx @talent-summoner/setup` to replace a key or update the skill. To disconnect, [revoke the key](https://talentsummoner.com/settings/apikeys), then remove the `talent-summoner` MCP entry and skill from your app. Setup displays their locations during installation.
+Rerun `npx @talent-summoner/setup` to replace a key or update the skill. To disconnect, [revoke the key](https://talentsummoner.com/settings/apikeys), then remove the `talent-summoner` MCP entry and skill from your AI agent. Setup displays their locations during installation.
 
-If your app does not show the tools after setup, restart it and check its MCP connection or workspace approval. [Report a setup issue](https://github.com/talent-summoner/agent-skills/issues/new) if the connection still fails.
+If your AI agent does not show the tools after setup, restart it and check its MCP connection or workspace approval. [Report a setup issue](https://github.com/talent-summoner/agent-skills/issues/new) if the connection still fails.
 
-## Already connected MCP?
+## Install the skill separately
 
-If you have configured the Talent Summoner MCP connection yourself, install only the companion skill:
+With Node.js, npm, and Git available, the skill can also be installed from Windows PowerShell or Command Prompt. The guided setup command exits on native Windows, so configure the Talent Summoner MCP server in your AI agent separately. Use this command if you already have an MCP connection or are setting one up yourself:
 
 ```sh
 npx skills add talent-summoner/agent-skills -g
 ```
 
-This command installs the skill instructions. It does not set up the MCP connection. Use one skill installation method per app to avoid duplicate entries.
+This command installs the skill instructions. It does not set up the MCP connection. Use one skill installation method per AI agent to avoid duplicate entries.
+
+For a manual MCP connection, add an HTTP server at `https://talentsummoner.com/api/mcp` in your AI agent's MCP settings and authenticate with your API key as a Bearer token.
 
 ## Contributing
 
