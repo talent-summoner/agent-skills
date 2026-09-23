@@ -25,9 +25,10 @@ const USER_MESSAGES = Object.freeze({
   'unexpected-skill': 'The displayed skill target is not a directory. Check it before retrying.',
   'tracked-config': 'The project MCP configuration is tracked by Git. Remove it from the index before installing a key.',
   'shared-config': 'Claude Code and Copilot CLI need a shared .mcp.json here. Move the servers from .github/mcp.json into .mcp.json under mcpServers, then retry.',
+  'private-config': 'Could not restrict access to the displayed MCP configuration file. Check its permissions and retry.',
   cancelled: 'Installation cancelled; nothing changed.',
 });
-const GENERIC_MESSAGE = 'Setup could not finish. Check the selected client configuration and permissions, then retry.';
+const GENERIC_MESSAGE = 'Setup could not finish. Check the selected AI agent configuration and permissions, then retry.';
 const VERIFICATION_MESSAGES = new Set([
   'MCP verification failed or the seven expected tools were unavailable. Check the endpoint and retry.',
   'MCP redirected to another origin; no credentials were sent there.',
@@ -132,10 +133,38 @@ export function inspectTarget(client, preview, cwd = process.cwd()) {
   return { ...paths, existingServer: Object.hasOwn(entries, preview ? 'talent-summoner-preview' : 'talent-summoner'), existingSkill: existsSync(paths.skill) };
 }
 
+export function setPrivateConfigAccess(path) {
+  if (process.platform !== 'win32') {
+    chmodSync(path, 0o600);
+    return;
+  }
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    '$path = $env:TALENT_SUMMONER_CONFIG_PATH',
+    '$identity = [Security.Principal.WindowsIdentity]::GetCurrent().User',
+    '$acl = [IO.File]::GetAccessControl($path)',
+    '$acl.SetAccessRuleProtection($true, $false)',
+    'foreach ($rule in @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))) { [void]$acl.RemoveAccessRuleAll($rule) }',
+    '$acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($identity, [Security.AccessControl.FileSystemRights]::FullControl, [Security.AccessControl.AccessControlType]::Allow))',
+    '[IO.File]::SetAccessControl($path, $acl)',
+  ].join('; ');
+  const allowedEnv = ['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'TEMP', 'TMP', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'HOMEDRIVE', 'HOMEPATH'];
+  const env = Object.fromEntries(allowedEnv.filter((name) => process.env[name]).map((name) => [name, process.env[name]]));
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+    env: { ...env, TALENT_SUMMONER_CONFIG_PATH: path },
+    encoding: 'utf8', windowsHide: true,
+  });
+  if (result.status !== 0) {
+    const error = new SetupUserError('private-config');
+    error.cause = result.error || new Error(result.stderr?.trim() || `PowerShell exited ${result.status}`);
+    throw error;
+  }
+}
+
 function protectConfig(path) {
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   if (!existsSync(path)) closeSync(openSync(path, 'wx', 0o600));
-  chmodSync(path, 0o600);
+  setPrivateConfigAccess(path);
 }
 
 function git(cwd, args) {
@@ -184,7 +213,8 @@ export async function installSkill(client, preview, cwd = process.cwd(), { runne
     const source = prepared?.skill || dirname(bundledSkill);
     const args = [skillsBin, 'add', source, '--agent', skillAgent(client), '--copy', '--yes', '--json'];
     if (!preview) args.push('--global');
-    const allowedEnv = ['HOME', 'PATH', 'TMPDIR', 'TMP', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'CLAUDE_CONFIG_DIR', 'GROK_HOME', 'LANG', 'LC_ALL'];
+    const allowedEnv = ['HOME', 'PATH', 'TMPDIR', 'TMP', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'CLAUDE_CONFIG_DIR', 'GROK_HOME', 'LANG', 'LC_ALL',
+      'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'HOMEDRIVE', 'HOMEPATH', 'TEMP', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT'];
     const env = Object.fromEntries(allowedEnv.filter((name) => process.env[name]).map((name) => [name, process.env[name]]));
     const result = runner(process.execPath, args, { cwd, stdio: 'pipe', encoding: 'utf8', env });
     if (result.status !== 0) throw new Error('Skill installation failed. Check client permissions and retry.');
@@ -219,7 +249,7 @@ export async function installClients({ clients, preview, cwd = process.cwd(), or
       if (!result.success) throw new Error('Native MCP configuration failed.');
       mcpConfigured = true;
       if (resolve(result.path) !== resolve(target.config) || result.extraPaths?.length) throw new Error('Unexpected native configuration path.');
-      chmodSync(target.config, 0o600);
+      setPrivateConfigAccess(target.config);
     } catch {
       results.push({ client: target.client, success: false, mcpConfigured, status: mcpConfigured ? 'mcp-configured-setup-incomplete' : 'mcp-not-configured', config: target.config, skill: target.skill });
       continue;

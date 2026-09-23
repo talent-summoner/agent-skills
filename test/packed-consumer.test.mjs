@@ -6,23 +6,22 @@
 */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { runNpm } from '../scripts/npm-cli.mjs';
 
 test('packed executable works for five clients with skills hoisted outside the scoped package', { timeout: 120000 }, () => {
   const root = mkdtempSync(join(tmpdir(), 'ts-setup-packed-'));
   const consumer = join(realpathSync(root), 'consumer');
   const npmEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) => !/^npm_/i.test(name)));
-  const runNpm = (args) => process.env.npm_execpath
-    ? execFileSync(process.execPath, [process.env.npm_execpath, ...args], { encoding: 'utf8', env: npmEnv })
-    : execFileSync('npm', args, { encoding: 'utf8', env: npmEnv });
+  const npm = (args) => runNpm(args, { encoding: 'utf8', env: npmEnv });
   try {
-    const packResult = JSON.parse(runNpm(['pack', '.', '--json', `--pack-destination=${root}`]));
+    const packResult = JSON.parse(npm(['pack', '.', '--json', `--pack-destination=${root}`]));
     const packed = Array.isArray(packResult) ? packResult[0] : Object.values(packResult)[0];
-    runNpm(['install', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', consumer, join(root, packed.filename)]);
+    npm(['install', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', consumer, join(root, packed.filename)]);
     const installed = join(consumer, 'node_modules/@talent-summoner/setup');
     assert.equal(existsSync(join(installed, 'node_modules/skills')), false);
     assert.equal(existsSync(join(consumer, 'node_modules/skills/package.json')), true);
@@ -36,7 +35,8 @@ test('packed executable works for five clients with skills hoisted outside the s
         origin: 'https://example.com', key: 'synthetic-fixture', confirmOverwrite: async () => true });
       if (results.some((result) => !result.success)) throw new Error(JSON.stringify(results.map(({ client, status }) => ({ client, status }))));
       console.log(JSON.stringify(Object.fromEntries(clients.map((client) => [client, targetPaths(client, true, process.cwd())]))));`;
-    const env = { PATH: process.env.PATH, LANG: 'C.UTF-8' };
+    const allowedEnv = ['PATH', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'HOMEDRIVE', 'HOMEPATH', 'TEMP', 'TMP', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT'];
+    const env = Object.fromEntries(allowedEnv.filter((name) => process.env[name]).map((name) => [name, process.env[name]]));
     const child = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: consumer, env, encoding: 'utf8' });
     assert.equal(child.status, 0, child.stderr);
     const targets = JSON.parse(child.stdout);

@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { runNpm } from './npm-cli.mjs';
 
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 assert.equal(pkg.name, '@talent-summoner/setup');
@@ -28,12 +29,12 @@ for (const [name, entry] of Object.entries(lock.packages ?? {})) {
 }
 
 await mkdir('artifacts', { recursive: true });
-const result = JSON.parse(execFileSync('npm', ['pack', '--json', '--pack-destination', 'artifacts'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+const result = JSON.parse(runNpm(['pack', '--json', '--pack-destination', 'artifacts'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
 // npm 11 emits an array; npm 12 keys the result by package name.
 const pack = Array.isArray(result) ? result[0] : Object.values(result)[0];
 assert.ok(pack.filename && !pack.filename.includes('/'));
 const archive = resolve('artifacts', pack.filename);
-const files = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n');
+const files = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split(/\r?\n/);
 const metadata = new Set(['package/package.json', 'package/README.md', 'package/LICENSE', 'package/skill-source.json', 'package/skills/talent-summoner/SKILL.md']);
 for (const file of files) {
   assert.ok(metadata.has(file) || /^package\/dist\/[a-zA-Z0-9_/-]+\.mjs$/.test(file), `Unexpected packed file: ${file}`);

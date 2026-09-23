@@ -53,7 +53,7 @@ export async function verifyConnection({ origin, key, bypass, fetchImpl = fetch 
     }
     return response;
   };
-  const client = new Client({ name: 'talent-summoner-setup', version: '0.1.0' });
+  const client = new Client({ name: 'talent-summoner-setup', version: '0.1.1' });
   const transport = new StreamableHTTPClientTransport(endpoint, { requestInit: { headers }, fetch: safeFetch });
   try {
     await client.connect(transport);

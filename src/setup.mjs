@@ -17,19 +17,15 @@ if (args.includes('--help') || args.includes('-h')) {
   process.exit(0);
 }
 if (args.some((arg) => arg !== '--preview') || args.filter((arg) => arg === '--preview').length > 1) {
-  console.error('Only --preview is supported. API keys must be entered in the masked prompt.');
+  console.error('Unknown or repeated option. Usage: talent-summoner-setup [--preview]. Enter API keys only in the masked prompt.');
   process.exit(2);
 }
 
 const preview = args.includes('--preview');
-if (process.platform === 'win32') {
-  console.error('Native Windows configuration is not yet supported. Run in macOS, Linux, or WSL.');
-  process.exit(2);
-}
 try {
   const choices = await clientChoices(preview);
   const clients = await checkbox({
-    message: 'Install for which apps?',
+    message: 'Install for which AI agents?',
     choices,
     required: true,
     // Reserve room for the question, validation and keyboard hints when opening.
@@ -71,7 +67,7 @@ try {
     } else console.log(`${result.client}: MCP entry was not configured; check permissions/configuration and rerun.`);
   }
   if (results.some((result) => !result.success)) process.exitCode = 1;
-  else console.log('Open or restart any app you set up, then ask: “Show my Talent Summoner sourcing sessions.”');
+  else console.log('Open or restart each AI agent you set up, then ask: “Show my Talent Summoner sourcing sessions.”');
 } catch (error) {
   const failure = describeSetupFailure(error);
   if (failure.exitCode === 0) console.log(failure.message);

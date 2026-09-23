@@ -1,5 +1,5 @@
 # [INPUT]: Committed package/lockfile, canonical skill export and version tags.
-# [OUTPUT]: Linux/macOS package verification; reviewed tag publication with OIDC.
+# [OUTPUT]: Linux/macOS/Windows package verification; reviewed tag publication with OIDC.
 # [POS]: Public installer CI/release, independent of the application's deployment.
 # [PROTOCOL]: No long-lived npm token or install-script exceptions; publish only the verified tarball.
 name: Verify and release
@@ -14,7 +14,7 @@ jobs:
   verify:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -25,12 +25,31 @@ jobs:
       - run: npm install --global npm@12.0.2
       - run: npm ci
       - run: npm run build
+      - if: matrix.os == 'windows-latest'
+        run: node --test --test-name-pattern="Windows restricts existing configuration file ACLs" test/installer.test.mjs
       - run: npm test
       - run: node scripts/verify-package.mjs
       - name: Smoke packed executable with default npm policy
+        if: matrix.os != 'windows-latest'
+        shell: bash
         run: |
           archive="$(find "$PWD/artifacts" -name '*.tgz' -print -quit)"
           npm exec --yes --cache "${RUNNER_TEMP}/setup-npm-cache" --package="$archive" -- talent-summoner-setup --help
+      - name: Smoke packed executable in PowerShell
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $archive = (Get-ChildItem artifacts -Filter *.tgz | Select-Object -First 1).FullName
+          npm exec --yes --cache "$env:RUNNER_TEMP\setup-pwsh-cache" --package="$archive" -- talent-summoner-setup --help
+      - name: Smoke packed executable in Command Prompt
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          if not exist artifacts\*.tgz exit /b 1
+          for %%F in (artifacts\*.tgz) do (
+            npm exec --yes --cache "%RUNNER_TEMP%\setup-cmd-cache" --package="%%~fF" -- talent-summoner-setup --help
+            if errorlevel 1 exit /b 1
+          )
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: matrix.os == 'ubuntu-latest'
         with:

@@ -1,8 +1,15 @@
 {
   "name": "@talent-summoner/setup",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
-  "description": "Install the Talent Summoner skill and MCP connection",
+  "description": "Connect AI agents to Talent Summoner sourcing tools and skill",
+  "keywords": [
+    "talent-summoner",
+    "mcp",
+    "agent-skill",
+    "recruiting",
+    "candidate-sourcing"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
