@@ -4,17 +4,19 @@ Connect your assistant to Talent Summoner with an API key, the sourcing skill an
 
 ## Release status
 
-This source prepares stable **`0.1.0`** from the verified `0.1.0-next.7` runtime and bundled skill. It is not a published release until the `v0.1.0` workflow succeeds and registry availability plus the `latest` mapping are verified. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for availability; a source commit alone is not a release. Production onboarding remains disabled until the stable package and production MCP endpoint have both passed their rollout checks.
+Stable **`0.1.0`** is published on npm `latest`; `next` resolves to the `0.1.0-next.7` prerelease. The production MCP endpoint is live (`v0.1.56`) and website key creation and MCP checks — seven-tool discovery and session listing — have passed. An isolated Claude Code production smoke verified the bare installer, ICP draft/edit polling, fresh-process recovery and key revocation. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for the current registry state.
 
-The current prerelease directs sender connection to outreach settings on the session's website. Review, confirmation and sending still use the sourcing session. Prereleases use the `next` channel.
+The installer directs sender connection to outreach settings on the session's website. Review, confirmation and sending still use the sourcing session. Prereleases use the `next` channel.
 
 ## Preview setup
 
 From a dedicated QA directory, connect to a preview deployment:
 
 ```sh
-npx @talent-summoner/setup@next --preview
+npx @talent-summoner/setup --preview
 ```
+
+Use `npx @talent-summoner/setup@next --preview` only to test installer changes on the prerelease channel.
 
 Select your apps and enter the preview website origin. Setup then shows **Next: Create an API key**, with a direct settings link immediately above the hidden key input. Open the link, sign in, create a key, and paste it into the prompt. Installation file paths appear after the connection check, before any files are changed. Protected Vercel deployments also need their automation bypass secret. Never paste either secret into agent chat or add it to the command line.
 
@@ -28,13 +30,13 @@ The bounded live-test cohort is Claude Code, Copilot CLI, OpenCode, Codex and Cu
 
 ## Production setup
 
-After the stable release and production endpoint are available, run from any directory:
+Run from any directory:
 
 ```sh
 npx @talent-summoner/setup
 ```
 
-For now, use `@next --preview`: npm’s bootstrap `latest` alias still resolves to a prerelease. A stable release must verify the `latest` mapping before enabling customer onboarding.
+npm `latest` resolves to `0.1.0`; the `next` channel carries installer prereleases.
 
 The command selects supported clients once, links to API-key settings, checks the connection and installs the skill plus MCP configuration at user scope. Open or restart any app you set up, then ask: **“Show my Talent Summoner sourcing sessions.”** Setup itself never starts sourcing or spends a Role.
 
@@ -67,7 +69,7 @@ The canonical skill is maintained with the application. `skill-source.json` reco
 
 ## Publishing
 
-Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA, and later prereleases through `0.1.0-next.7` completed OIDC publication and availability checks. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
+Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA, later prereleases through `0.1.0-next.7` completed OIDC publication and availability checks, and stable `0.1.0` published from tag `v0.1.0` at commit `df603b8` in [workflow run 35820344513](https://github.com/talent-summoner/agent-skills/actions/runs/35820344513) with registry availability and the `latest` mapping verified. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
 
 Version tags must match package.json. Prereleases publish to `next`; stable versions publish to `latest`. npm scans releases before installation becomes available. The workflow checks availability with bounded retries; a pending scan requires rerunning only the separate `availability` job, not the publish job or the same version.
 
