@@ -10,7 +10,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, statSync, existsSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { describeSetupFailure, installClients, installSkill, inspectTarget, protectPreviewProject, preparePreviewSkill, targetPaths, SetupUserError } from '../src/install.mjs';
+import { describeSetupFailure, installClients, installSkill, inspectTarget, protectPreviewProject, preparePreviewSkill, setPrivateConfigAccess, targetPaths, SetupUserError } from '../src/install.mjs';
 import { clientChoices, compatibleClients, skillAgent } from '../src/clients.mjs';
 import { parse as parseToml } from '@iarna/toml';
 import { parse as parseJsonc } from 'jsonc-parser';
@@ -38,6 +38,17 @@ function assertPrivateConfig(path) {
   });
   assert.equal(result.status, 0, `${path}: ${result.stderr || result.error || 'unexpected ACL'}`);
 }
+
+if (process.platform === 'win32') test('Windows restricts existing configuration file ACLs', () => {
+  const cwd = project();
+  try {
+    const config = join(cwd, '.mcp.json');
+    writeFileSync(config, '{}');
+    try { setPrivateConfigAccess(config); }
+    catch (error) { assert.fail(`ACL update failed: ${error.cause || error}`); }
+    assertPrivateConfig(config);
+  } finally { cleanup(cwd); }
+});
 
 test('rejects malformed origins', () => {
   for (const value of ['http://example.com', 'https://u:p@example.com', 'https://example.com/a', 'https://example.com/?x=1', 'https://example.com/#x']) {

@@ -25,6 +25,8 @@ jobs:
       - run: npm install --global npm@12.0.2
       - run: npm ci
       - run: npm run build
+      - if: matrix.os == 'windows-latest'
+        run: node --test --test-name-pattern="Windows restricts existing configuration file ACLs" test/installer.test.mjs
       - run: npm test
       - run: node scripts/verify-package.mjs
       - name: Smoke packed executable with default npm policy

@@ -133,7 +133,7 @@ export function inspectTarget(client, preview, cwd = process.cwd()) {
   return { ...paths, existingServer: Object.hasOwn(entries, preview ? 'talent-summoner-preview' : 'talent-summoner'), existingSkill: existsSync(paths.skill) };
 }
 
-function setPrivateConfigAccess(path) {
+export function setPrivateConfigAccess(path) {
   if (process.platform !== 'win32') {
     chmodSync(path, 0o600);
     return;
@@ -150,9 +150,13 @@ function setPrivateConfigAccess(path) {
   ].join('; ');
   const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
     env: { ...process.env, TALENT_SUMMONER_CONFIG_PATH: path },
-    stdio: 'ignore', windowsHide: true,
+    encoding: 'utf8', windowsHide: true,
   });
-  if (result.status !== 0) throw new SetupUserError('private-config');
+  if (result.status !== 0) {
+    const error = new SetupUserError('private-config');
+    error.cause = result.error || new Error(result.stderr?.trim() || `PowerShell exited ${result.status}`);
+    throw error;
+  }
 }
 
 function protectConfig(path) {
