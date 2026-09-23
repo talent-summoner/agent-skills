@@ -2,9 +2,13 @@
 
 Connect your assistant to Talent Summoner with an API key, the sourcing skill and MCP tools.
 
-## Preview release
+## Release status
 
-This source prepares **`0.1.0-next.7`**, directing sender connection to outreach settings on the session's website. Review, confirmation and sending still use the sourcing session. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for registry availability; a source commit alone is not a published release. Prereleases use the `next` channel. Production onboarding remains disabled until the stable installer and production MCP endpoint ship.
+This source prepares stable **`0.1.0`** from the verified `0.1.0-next.7` runtime and bundled skill. It is not a published release until the `v0.1.0` workflow succeeds and registry availability plus the `latest` mapping are verified. Check [npm versions](https://www.npmjs.com/package/@talent-summoner/setup?activeTab=versions) for availability; a source commit alone is not a release. Production onboarding remains disabled until the stable package and production MCP endpoint have both passed their rollout checks.
+
+The current prerelease directs sender connection to outreach settings on the session's website. Review, confirmation and sending still use the sourcing session. Prereleases use the `next` channel.
+
+## Preview setup
 
 From a dedicated QA directory, connect to a preview deployment:
 
@@ -54,7 +58,7 @@ npm run build
 npm test
 node scripts/verify-package.mjs
 npm pack
-npm exec --package=/absolute/path/talent-summoner-setup-0.1.0-next.7.tgz -- talent-summoner-setup --preview
+npm exec --package=/absolute/path/talent-summoner-setup-0.1.0.tgz -- talent-summoner-setup --preview
 ```
 
 The npm `next` tag selects an installer prerelease. `--preview` independently selects a non-production backend; no new package version is needed for every app preview. Preview credentials are runtime inputs, never built into the package.
@@ -63,7 +67,7 @@ The canonical skill is maintained with the application. `skill-source.json` reco
 
 ## Publishing
 
-Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA. Version `0.1.0-next.3` previously completed OIDC publication and availability checks. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
+Build and verify the exact tarball before publishing. The first prerelease was bootstrapped through interactive npm 2FA, and later prereleases through `0.1.0-next.7` completed OIDC publication and availability checks. This repository's `release.yml` is configured as a trusted publisher with direct publish permission for later releases. The workflow uses GitHub-hosted runners and OIDC, with no long-lived npm publishing token.
 
 Version tags must match package.json. Prereleases publish to `next`; stable versions publish to `latest`. npm scans releases before installation becomes available. The workflow checks availability with bounded retries; a pending scan requires rerunning only the separate `availability` job, not the publish job or the same version.
 
