@@ -5,7 +5,7 @@ Connect your AI agent to [Talent Summoner](https://talentsummoner.com) to source
 ## Quick start
 
 1. Sign in to Talent Summoner and [create an API key](https://talentsummoner.com/settings/apikeys).
-2. For guided setup, use an interactive macOS, Linux, or WSL terminal with Node.js 22.20 or newer:
+2. In an interactive macOS or Linux terminal, or Windows PowerShell or Command Prompt, with Node.js 22.20 or newer, run:
 
    ```sh
    npx @talent-summoner/setup
@@ -15,8 +15,6 @@ Connect your AI agent to [Talent Summoner](https://talentsummoner.com) to source
 4. Open or restart each AI agent, approve the connection if prompted, and ask: **“Show my Talent Summoner sourcing sessions.”**
 
 Keep your API key out of AI agent chats, shell commands, and Git. Setup itself does not start sourcing or use a Role.
-
-Using Windows PowerShell or Command Prompt? See [install the skill separately](#install-the-skill-separately).
 
 ## What you can do
 
@@ -35,7 +33,7 @@ If your AI agent does not show the tools after setup, restart it and check its M
 
 ## Install the skill separately
 
-With Node.js, npm, and Git available, the skill can also be installed from Windows PowerShell or Command Prompt. The guided setup command exits on native Windows, so configure the Talent Summoner MCP server in your AI agent separately. Use this command if you already have an MCP connection or are setting one up yourself:
+If you have configured the Talent Summoner MCP connection yourself, install only the companion skill:
 
 ```sh
 npx skills add talent-summoner/agent-skills -g

@@ -22,10 +22,6 @@ if (args.some((arg) => arg !== '--preview') || args.filter((arg) => arg === '--p
 }
 
 const preview = args.includes('--preview');
-if (process.platform === 'win32') {
-  console.error('Native Windows configuration is not yet supported. Run in macOS, Linux, or WSL.');
-  process.exit(2);
-}
 try {
   const choices = await clientChoices(preview);
   const clients = await checkbox({

@@ -18,6 +18,26 @@ import { EXPECTED_TOOLS, parseOrigin, verifyConnection, SetupVerificationError }
 
 function project() { return mkdtempSync(join(tmpdir(), 'ts-setup-test-')); }
 function cleanup(path) { rmSync(path, { recursive: true, force: true }); }
+function assertPrivateConfig(path) {
+  if (process.platform !== 'win32') {
+    assert.equal(statSync(path).mode & 0o777, 0o600, path);
+    return;
+  }
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    '$acl = Get-Acl -LiteralPath $env:TALENT_SUMMONER_TEST_CONFIG_PATH',
+    'if (-not $acl.AreAccessRulesProtected) { exit 1 }',
+    '$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value',
+    '$rules = @($acl.Access)',
+    'if ($rules.Count -eq 0) { exit 1 }',
+    'foreach ($rule in $rules) { if ($rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -ne $sid -or $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow) { exit 1 } }',
+  ].join('; ');
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+    env: { ...process.env, TALENT_SUMMONER_TEST_CONFIG_PATH: path },
+    encoding: 'utf8', windowsHide: true,
+  });
+  assert.equal(result.status, 0, `${path}: ${result.stderr || result.error || 'unexpected ACL'}`);
+}
 
 test('rejects malformed origins', () => {
   for (const value of ['http://example.com', 'https://u:p@example.com', 'https://example.com/a', 'https://example.com/?x=1', 'https://example.com/#x']) {
@@ -71,7 +91,7 @@ test('native library preserves unrelated servers and private permissions on reru
     assert.deepEqual(cursor.mcpServers.other, { command: 'local' });
     assert.equal(cursor.mcpServers['talent-summoner-preview'].headers.Authorization, 'Bearer dummy-key');
     assert.deepEqual(Object.keys(cursor.mcpServers).sort(), ['other', 'talent-summoner-preview']);
-    for (const path of [join(cwd, '.mcp.json'), join(cwd, '.cursor/mcp.json')]) assert.equal(statSync(path).mode & 0o777, 0o600);
+    for (const path of [join(cwd, '.mcp.json'), join(cwd, '.cursor/mcp.json')]) assertPrivateConfig(path);
   } finally { cleanup(cwd); }
 });
 
@@ -217,7 +237,7 @@ test('pinned skill CLI accepts a project reached through a filesystem alias', as
   const alias = join(root, 'alias');
   try {
     mkdirSync(physical);
-    symlinkSync(physical, alias, 'dir');
+    symlinkSync(physical, alias, process.platform === 'win32' ? 'junction' : 'dir');
     for (const client of ['claude-code', 'cursor']) {
       await installSkill(client, true, alias, { origin: 'https://preview.example.com' });
       assert.ok(existsSync(join(targetPaths(client, true, physical).skill, 'SKILL.md')));
@@ -249,7 +269,7 @@ test('every offered preview client receives authenticated native config and a co
     assert.equal(results.length, clients.length);
     for (const result of results) {
       assert.equal(result.status, 'installed', result.client);
-      assert.equal(statSync(result.config).mode & 0o777, 0o600, result.client);
+      assertPrivateConfig(result.config);
       assert.match(readFileSync(result.config, 'utf8'), /Bearer synthetic-fixture/, result.client);
       assert.ok(existsSync(join(result.skill, 'SKILL.md')), result.client);
     }
@@ -293,7 +313,7 @@ test('native VS Code, Codex and OpenCode project formats preserve unrelated entr
       const first = await installClients(options);
       assert.equal(first[0].status, 'installed', client);
       assert.equal(first[0].config, config);
-      assert.equal(statSync(config).mode & 0o777, 0o600);
+      assertPrivateConfig(config);
       const updated = readFileSync(config, 'utf8');
       const parsed = client === 'codex' ? parseToml(updated) : parseJsonc(updated);
       const servers = client === 'vscode' ? parsed.servers : client === 'codex' ? parsed.mcp_servers : parsed.mcp;
@@ -350,7 +370,7 @@ test('Claude and Copilot CLI share .mcp.json with exact protected writer paths',
     const results = await installClients({ clients, preview: true, cwd, origin: 'https://preview.example.com', key: 'synthetic-fixture', confirmOverwrite: async () => true, skillInstaller: async () => {} });
     assert.ok(results.every((result) => result.success));
     assert.ok(results.every((result) => result.config === config));
-    assert.equal(statSync(config).mode & 0o777, 0o600);
+    assertPrivateConfig(config);
     const parsed = JSON.parse(readFileSync(config, 'utf8'));
     assert.deepEqual(parsed.mcpServers.other, { command: 'local' });
     assert.equal(parsed.mcpServers['talent-summoner-preview'].headers.Authorization, 'Bearer synthetic-fixture');
@@ -368,11 +388,11 @@ test('Copilot CLI uses legacy .github/mcp.json alone; Claude shared-path conflic
     const options = { preview: true, cwd, origin: 'https://preview.example.com', key: 'synthetic-fixture', confirmOverwrite: async () => true, skillInstaller: async () => {} };
     await assert.rejects(installClients({ ...options, clients: ['claude-code', 'github-copilot-cli'] }), /shared \.mcp\.json/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false);
-    assert.equal(statSync(legacy).mode & 0o777, 0o644);
+    if (process.platform !== 'win32') assert.equal(statSync(legacy).mode & 0o777, 0o644);
     const results = await installClients({ ...options, clients: ['github-copilot-cli'] });
     assert.equal(results[0].status, 'installed');
     assert.equal(results[0].config, legacy);
-    assert.equal(statSync(legacy).mode & 0o777, 0o600);
+    assertPrivateConfig(legacy);
     assert.equal(JSON.parse(readFileSync(legacy, 'utf8')).mcpServers['talent-summoner-preview'].headers.Authorization, 'Bearer synthetic-fixture');
     assert.match(readFileSync(join(cwd, '.gitignore'), 'utf8'), /\/\.github\/mcp\.json/);
   } finally { cleanup(cwd); }
@@ -390,7 +410,7 @@ test('Copilot CLI refuses a VS Code servers wrapper before changing its project 
       confirmOverwrite: async () => true, skillInstaller: async () => {},
     }), /unrecognized layout/);
     assert.equal(readFileSync(config, 'utf8'), original);
-    assert.equal(statSync(config).mode & 0o777, 0o644);
+    if (process.platform !== 'win32') assert.equal(statSync(config).mode & 0o777, 0o644);
     assert.equal(existsSync(join(cwd, '.gitignore')), false);
   } finally { cleanup(cwd); }
 });
