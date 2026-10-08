@@ -1,6 +1,12 @@
 # Talent Summoner for AI agents
 
+[![npm version](https://img.shields.io/npm/v/@talent-summoner/setup)](https://www.npmjs.com/package/@talent-summoner/setup)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MCP server](https://img.shields.io/badge/MCP-remote%20server-black)](https://talentsummoner.com/mcp)
+
 Connect your AI agent to [Talent Summoner](https://talentsummoner.com) to source and review hiring candidates. The Model Context Protocol (MCP) connection gives your AI agent sourcing tools, and the companion skill guides it through the workflow.
+
+Works with MCP-compatible AI agents, including Claude, ChatGPT and Cursor. Full connection guide, tool list and privacy details: [talentsummoner.com/mcp](https://talentsummoner.com/mcp).
 
 ## Quick start
 
@@ -42,6 +48,13 @@ npx skills add talent-summoner/agent-skills -g
 This command installs the skill instructions. It does not set up the MCP connection. Use one skill installation method per AI agent to avoid duplicate entries.
 
 For a manual MCP connection, add an HTTP server at `https://talentsummoner.com/api/mcp` in your AI agent's MCP settings and authenticate with your API key as a Bearer token.
+
+## Links
+
+- [Talent Summoner MCP page](https://talentsummoner.com/mcp): connection guide, tools and FAQ
+- [Remote MCP endpoint](https://talentsummoner.com/api/mcp): Streamable HTTP, OAuth 2.1 with PKCE, or API key as a Bearer token
+- [Privacy policy](https://talentsummoner.com/privacy) and [terms](https://talentsummoner.com/terms)
+- [Report an issue](https://github.com/talent-summoner/agent-skills/issues/new)
 
 ## Contributing
 
