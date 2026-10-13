@@ -57,7 +57,7 @@ test('rejects malformed origins', () => {
   assert.equal(parseOrigin('https://example.com'), 'https://example.com');
 });
 
-test('SDK initializes and lists exactly seven tools without calling them', async () => {
+test('SDK initializes and lists exactly the expected tools without calling them', async () => {
   const methods = [];
   const fakeFetch = async (_input, init) => {
     assert.equal(init.redirect, 'manual');
@@ -71,6 +71,27 @@ test('SDK initializes and lists exactly seven tools without calling them', async
   };
   await verifyConnection({ origin: 'https://example.com', key: 'dummy-key', fetchImpl: fakeFetch });
   assert.deepEqual(methods, ['initialize', 'notifications/initialized', 'tools/list']);
+});
+
+test('expected inventory matches the application tool surface', () => {
+  assert.deepEqual([...EXPECTED_TOOLS].sort(), [
+    'sourcing_contact', 'sourcing_continue', 'sourcing_outreach', 'sourcing_outreach_send',
+    'sourcing_read', 'sourcing_review', 'sourcing_share', 'sourcing_start',
+    'sourcing_stop', 'sourcing_unlock_role',
+  ]);
+});
+
+test('an older seven-tool server fails the inventory check', async () => {
+  const older = EXPECTED_TOOLS.filter((name) => !['sourcing_share', 'sourcing_outreach', 'sourcing_outreach_send'].includes(name));
+  const fakeFetch = async (_input, init) => {
+    const message = JSON.parse(init.body);
+    if (message.method === 'notifications/initialized') return new Response(null, { status: 202 });
+    const result = message.method === 'initialize'
+      ? { protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'stub', version: '1' } }
+      : { tools: older.map((name) => ({ name, inputSchema: { type: 'object' } })) };
+    return new Response(JSON.stringify({ jsonrpc: '2.0', id: message.id, result }), { headers: { 'content-type': 'application/json' } });
+  };
+  await assert.rejects(verifyConnection({ origin: 'https://example.com', key: 'dummy-key', fetchImpl: fakeFetch }), SetupVerificationError);
 });
 
 test('refuses cross-origin credential redirects and hides response payload', async () => {

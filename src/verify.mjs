@@ -1,6 +1,6 @@
 /*
 [INPUT]: HTTPS MCP endpoint, raw API key, optional preview protection secret.
-[OUTPUT]: Read-only protocol verification of the seven expected tools.
+[OUTPUT]: Read-only protocol verification of the expected tool inventory (app v0.1.79 or later).
 [POS]: Network gate before any client configuration or skill write.
 [PROTOCOL]: Never expose response bodies or SDK errors; never follow cross-origin redirects with credentials.
 */
@@ -9,7 +9,8 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 
 export const EXPECTED_TOOLS = Object.freeze([
   'sourcing_start', 'sourcing_continue', 'sourcing_read', 'sourcing_stop',
-  'sourcing_review', 'sourcing_contact', 'sourcing_unlock_role',
+  'sourcing_review', 'sourcing_share', 'sourcing_contact',
+  'sourcing_outreach', 'sourcing_outreach_send', 'sourcing_unlock_role',
 ]);
 
 export class SetupVerificationError extends Error {}
@@ -64,7 +65,7 @@ export async function verifyConnection({ origin, key, bypass, fetchImpl = fetch 
     }
   } catch {
     throw new SetupVerificationError(failure === 'Could not verify the MCP connection. Check the origin and retry.'
-      ? 'MCP verification failed or the seven expected tools were unavailable. Check the endpoint and retry.' : failure);
+      ? 'MCP verification failed or the expected tools were unavailable. Check the endpoint and retry.' : failure);
   } finally {
     try { await client.close(); } catch { /* best effort */ }
   }

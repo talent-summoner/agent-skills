@@ -30,7 +30,7 @@ const USER_MESSAGES = Object.freeze({
 });
 const GENERIC_MESSAGE = 'Setup could not finish. Check the selected AI agent configuration and permissions, then retry.';
 const VERIFICATION_MESSAGES = new Set([
-  'MCP verification failed or the seven expected tools were unavailable. Check the endpoint and retry.',
+  'MCP verification failed or the expected tools were unavailable. Check the endpoint and retry.',
   'MCP redirected to another origin; no credentials were sent there.',
   'MCP redirected unexpectedly. Check the website origin.',
   'The API key was rejected. Create a key on the displayed website origin and retry.',
