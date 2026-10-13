@@ -1,7 +1,7 @@
 {
   "name": "talent-summoner",
   "displayName": "Talent Summoner",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Source, review and contact hiring candidates with Talent Summoner: draft an ideal candidate profile, run AI candidate searches, shortlist people and look up work emails from Claude.",
   "author": {
     "name": "Talent Summoner",

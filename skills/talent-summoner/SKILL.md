@@ -7,6 +7,21 @@ description: Source, review and contact hiring candidates through Talent Summone
 
 Use the connected Talent Summoner MCP tools. The user connects their account by signing in through their client's connector (OAuth) or with an API key; never ask them to paste a key into the conversation. OAuth users reconnect through their client's connector settings. If tools are unavailable, ask them to finish the MCP connection in their client.
 
+The workflow is **start → review the ICP → continue (search, refine) → review candidates → contact, share or send outreach**:
+
+| Step | Tool | What it does |
+| --- | --- | --- |
+| Start | `sourcing_start` | Creates a saved session from the role brief |
+| Check progress | `sourcing_read` | Reads a session, or lists sessions when no ID is given |
+| Continue | `sourcing_continue` | Sends one ordinary message: ICP edits or approval, search, find more, refine, outreach draft |
+| Review | `sourcing_review` | Saves `liked`, `shortlisted` or `skipped` for one candidate |
+| Contact | `sourcing_contact` | Requests a work-email lookup for one candidate |
+| Share | `sourcing_share` | Previews, publishes and manages a public shortlist link, only after the user approves the previewed list |
+| Review outreach | `sourcing_outreach` | Previews the personalised messages, reads a sent batch's status, or resolves LinkedIn reachability |
+| Send outreach | `sourcing_outreach_send` | Sends the reviewed messages, only after the user approves the exact sender, recipients and messages |
+| Unlock | `sourcing_unlock_role` | Spends one paid Role on the session, only with the user's explicit agreement |
+| Stop | `sourcing_stop` | Stops the running turn; completed work stays saved |
+
 ## Start or resume
 
 - Gather the role, location, required experience and meaningful constraints. Reuse context the user already supplied; ask only for information that changes the search. Turn an attached job description into brief text before starting.
