@@ -1,4 +1,4 @@
-# [INPUT]: Committed package/lockfile, canonical skill export and version tags.
+# [INPUT]: Committed setup/ package and lockfile, the repository-root canonical skill export and version tags.
 # [OUTPUT]: Linux/macOS/Windows package verification; reviewed tag publication with OIDC.
 # [POS]: Public installer CI/release, independent of the application's deployment.
 # [PROTOCOL]: No long-lived npm token or install-script exceptions; publish only the verified tarball.
@@ -16,6 +16,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: setup
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -54,7 +57,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         with:
           name: npm-package
-          path: artifacts/*.tgz
+          path: setup/artifacts/*.tgz
           if-no-files-found: error
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -80,7 +83,7 @@ jobs:
         env:
           RELEASE_REF: ${{ github.ref_name }}
         run: |
-          version="$(node -p 'require("./package.json").version')"
+          version="$(node -p 'require("./setup/package.json").version')"
           test "$RELEASE_REF" = "v$version"
           tag=latest
           case "$version" in *-*) tag=next;; esac
@@ -98,7 +101,7 @@ jobs:
       - run: npm install --global npm@12.0.2
       - name: Wait for registry availability (retry this job only)
         run: |
-          version="$(node -p 'require("./package.json").version')"
+          version="$(node -p 'require("./setup/package.json").version')"
           consumer="$(mktemp -d "${RUNNER_TEMP}/setup-availability-XXXXXX")"
           cd "$consumer"
           for attempt in $(seq 1 60); do

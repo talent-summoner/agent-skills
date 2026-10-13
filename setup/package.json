@@ -21,7 +21,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/talent-summoner/agent-skills.git"
+    "url": "git+https://github.com/talent-summoner/agent-skills.git",
+    "directory": "setup"
   },
   "homepage": "https://github.com/talent-summoner/agent-skills#readme",
   "bin": {
@@ -37,7 +38,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node scripts/build.mjs && node --test test/*.test.mjs"
   },
   "dependencies": {
     "@iarna/toml": "2.2.5",

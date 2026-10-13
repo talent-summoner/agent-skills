@@ -12,7 +12,7 @@ Setup checks the connection and displays installation paths before writing files
 
 To test installer changes on the prerelease channel, use `npx @talent-summoner/setup@next --preview`. The `@next` tag selects a prerelease installer; `--preview` selects the preview backend. A new package version is not required for each application preview.
 
-To test a local tarball after the [package checks](../CONTRIBUTING.md#local-development):
+To test a local tarball after the [package checks](../CONTRIBUTING.md#local-development), run this from `setup/`:
 
 ```sh
 setup_version=$(node -p 'require("./package.json").version')

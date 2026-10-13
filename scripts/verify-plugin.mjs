@@ -1,3 +1,9 @@
+/**
+ * [INPUT]: Root Claude Code plugin files (.claude-plugin/, .mcp.json, icon) and the exported skill with skill-source.json.
+ * [OUTPUT]: Exit 0 when the marketplace entry, manifest, MCP server, icon and skill hash agree and the root carries no package.json; otherwise one line per failure.
+ * [POS]: Plugin CI gate beside setup/scripts/verify-package.mjs; also run by the skill-sync workflow before it pushes.
+ * [PROTOCOL]: Read-only; no network.
+ */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -20,6 +26,8 @@ const entry = marketplace.plugins?.find((plugin) => plugin.name === claude.name)
 check(entry?.source === './', 'marketplace.json must list the plugin with source "./"');
 check(claude.repository === REPOSITORY, `.claude-plugin/plugin.json repository must be ${REPOSITORY}`);
 check(existsSync(claude.icon ?? ''), 'plugin.json icon file is missing');
+// Claude Code installs npm dependencies for a plugin whose root has a package.json and a lockfile.
+check(!existsSync('package.json'), 'Keep package.json out of the plugin root; the npm package lives in setup/');
 
 const servers = Object.entries(mcp.mcpServers ?? {});
 check(servers.length === 1, '.mcp.json must define exactly one server');

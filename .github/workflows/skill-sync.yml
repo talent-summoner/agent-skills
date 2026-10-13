@@ -80,9 +80,7 @@ jobs:
       - name: Verify
         if: steps.branch.outputs.exists == 'false'
         run: |
-          npm ci
-          npm run build
-          node scripts/verify-package.mjs
+          (cd setup && npm ci && npm run build && node scripts/verify-package.mjs)
           node scripts/verify-plugin.mjs
       - name: Push and open the pull request
         if: steps.branch.outputs.exists == 'false'

@@ -6,12 +6,17 @@ This repository packages the Talent Summoner setup command and a copy of the sou
 
 Use Node.js 22.20 or newer with a compatible npm version. npm 12 requires Node.js 22.22.2, 24.15.0, or a supported newer release.
 
+The npm package lives in `setup/`, so the repository root stays a dependency-free Claude Code plugin. Run the package checks from there:
+
 ```sh
+cd setup
 npm ci
 npm run build
 npm test
 node scripts/verify-package.mjs
 ```
+
+The build copies the root `skills/talent-summoner/SKILL.md`, `skill-source.json`, `README.md` and `LICENSE` into `setup/` for packing. The copies are ignored by Git; edit or export the root files instead.
 
 The package verifier checks the built tarball, bundled skill hash, executable, dependencies, and package contents. Setup runs from the built executable; consumers do not run an install-time lifecycle script.
 
