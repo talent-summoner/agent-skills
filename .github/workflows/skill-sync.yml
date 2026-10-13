@@ -1,0 +1,108 @@
+# [INPUT]: The live canonical skill at talentsummoner.com and the deployed commit from /api/version.
+# [OUTPUT]: A skill-sync/<commit> branch and pull request when the live skill differs from skill-source.json.
+# [POS]: Pull-based replacement for running scripts/export-agent-skill.mjs by hand after each app release.
+# [PROTOCOL]: Never push to main; accept the skill only when both version reads name the same commit; verify before pushing.
+name: Sync skill from production
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: skill-sync
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://talentsummoner.com
+      SKILL: skills/talent-summoner/SKILL.md
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.15.0
+          package-manager-cache: false
+      - name: Fetch the live skill
+        id: fetch
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="$(curl -fsS "$SITE/api/version" | jq -r .commitSha)"
+          curl -fsS "$SITE/skills/talent-summoner/SKILL.md" -o "$RUNNER_TEMP/SKILL.md"
+          after="$(curl -fsS "$SITE/api/version" | jq -r .commitSha)"
+          if [[ ! "$before" =~ ^[0-9a-f]{40}$ || "$before" != "$after" ]]; then
+            echo "::error::Deployed commit unreadable or changed during the fetch; rerun later."
+            exit 1
+          fi
+          live="$(sha256sum "$RUNNER_TEMP/SKILL.md" | cut -d' ' -f1)"
+          current="$(jq -r .sha256 skill-source.json)"
+          echo "commit=$before" >> "$GITHUB_OUTPUT"
+          if [[ "$live" == "$current" ]]; then
+            echo "Skill is up to date with $before."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Prepare the sync branch
+        id: branch
+        if: steps.fetch.outputs.changed == 'true'
+        shell: bash
+        env:
+          COMMIT: ${{ steps.fetch.outputs.commit }}
+        run: |
+          set -euo pipefail
+          branch="skill-sync/${COMMIT:0:12}"
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            echo "Branch $branch already exists."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+          cp "$RUNNER_TEMP/SKILL.md" "$SKILL"
+          node --input-type=module -e '
+            import { createHash } from "node:crypto";
+            import { readFileSync, writeFileSync } from "node:fs";
+            const write = (path, value) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+            const source = JSON.parse(readFileSync("skill-source.json", "utf8"));
+            source.sourceCommit = process.env.COMMIT;
+            source.sha256 = createHash("sha256").update(readFileSync(process.env.SKILL)).digest("hex");
+            write("skill-source.json", source);
+            for (const path of [".claude-plugin/plugin.json", ".cursor-plugin/plugin.json"]) {
+              const plugin = JSON.parse(readFileSync(path, "utf8"));
+              const [major, minor, patch] = plugin.version.split(".").map(Number);
+              plugin.version = `${major}.${minor}.${patch + 1}`;
+              write(path, plugin);
+            }
+          '
+      - name: Verify
+        if: steps.branch.outputs.exists == 'false'
+        run: |
+          npm ci
+          npm run build
+          node scripts/verify-package.mjs
+          node scripts/verify-plugin.mjs
+      - name: Push and open the pull request
+        if: steps.branch.outputs.exists == 'false'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+          COMMIT: ${{ steps.fetch.outputs.commit }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BRANCH"
+          git add "$SKILL" skill-source.json .claude-plugin/plugin.json .cursor-plugin/plugin.json
+          git commit -m "chore: sync skill from talent-summoner-app ${COMMIT:0:12}"
+          git push origin "$BRANCH"
+          body="Exports the live canonical skill (deployed commit \`$COMMIT\`) and bumps both plugin versions.
+
+          Pull requests opened with the workflow token do not trigger other workflows; close and reopen this PR to run the checks."
+          if ! gh pr create --base main --head "$BRANCH" --title "chore: sync skill from talent-summoner-app ${COMMIT:0:12}" --body "$body"; then
+            echo "::error::Pushed $BRANCH but could not open the pull request. Allow GitHub Actions to create pull requests in the repository settings, or open it by hand: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$BRANCH"
+            exit 1
+          fi
