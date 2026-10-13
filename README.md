@@ -35,6 +35,10 @@ In Claude Code:
 
 Claude Code asks you to sign in to Talent Summoner the first time it uses a tool. The plugin runs no local code, hooks or scripts; it only connects to `https://talentsummoner.com/api/mcp`. Disconnect at any time in Talent Summoner under **Settings → Connected apps**. Use either the plugin or `npx @talent-summoner/setup` in Claude Code, not both, to avoid duplicate tools and skills. For Cursor and other AI agents, use `npx @talent-summoner/setup`.
 
+## ChatGPT and Codex plugin
+
+We have prepared a Talent Summoner plugin for the OpenAI plugin directory used by ChatGPT and Codex. It is not listed yet and will be available there only after OpenAI approves it. Until then, use `npx @talent-summoner/setup` for Codex, or add the MCP connection manually.
+
 ## What you can do
 
 - Draft an ideal candidate profile before searching: “Draft the ideal candidate profile for a senior React engineer in Berlin. Let me review it before searching.”

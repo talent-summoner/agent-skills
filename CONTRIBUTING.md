@@ -41,6 +41,15 @@ node scripts/verify-plugin.mjs
 npx @anthropic-ai/claude-code@2.1.293 plugin validate . --strict
 ```
 
+The same repository builds the OpenAI (ChatGPT and Codex) plugin package. `openai/plugin.json` and `openai/mcp.json` are its Agent Plugins manifest and MCP configuration. They live outside the root so that the Claude Code plugin and Codex marketplace installs are unchanged. `scripts/verify-plugin.mjs` checks that they match the Claude manifest (name, version, listing URLs, icon, MCP server) and contain no secret-like field. Build the upload ZIP with:
+
+```sh
+node scripts/build-openai-plugin.mjs                     # dist/openai/talent-summoner-<version>.zip
+node scripts/build-openai-plugin.mjs --require-client-id # refuses the client ID placeholder
+```
+
+The ZIP contains `plugin.json`, `mcp.json`, `skills/` and the referenced `assets/` at its root, and CI uploads it as the `openai-plugin` artifact. `openai/mcp.json` declares the public OAuth client ID only. Enter the client secret, reviewer test account and other review details in the [OpenAI plugin portal](https://platform.openai.com/plugins), never in this repository. Keep `version` in both plugin manifests equal, and upload a new ZIP whenever the skill or listing changes.
+
 The daily **Sync skill from production** workflow compares the live skill at `talentsummoner.com` with `skill-source.json`. When they differ, it pushes a `skill-sync/<commit>` branch with the export and a plugin patch bump, and opens a pull request for review.
 
 See [preview QA](docs/preview-qa.md) for testing against a preview deployment and [releasing](docs/releasing.md) for the publishing procedure.

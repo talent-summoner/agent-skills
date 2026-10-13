@@ -1,0 +1,49 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "talent-summoner",
+  "version": "0.2.1",
+  "description": "Source, review and contact hiring candidates with Talent Summoner: draft an ideal candidate profile, run AI candidate searches, shortlist people and look up work emails.",
+  "author": {
+    "name": "Talent Summoner",
+    "url": "https://talentsummoner.com"
+  },
+  "homepage": "https://talentsummoner.com",
+  "repository": "https://github.com/talent-summoner/agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "recruiting",
+    "sourcing",
+    "hiring",
+    "candidates",
+    "talent"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Talent Summoner",
+        "shortDescription": "Source and review candidates",
+        "longDescription": "Talent Summoner finds and evaluates hiring candidates for a role. Describe the role, review the ideal candidate profile it drafts, then search for matching candidates, refine the criteria and find more people in the same session. Review and shortlist candidates, look up work emails and prepare outreach drafts.\n\nSearches and email lookups run in the background and usually take a few minutes; progress is checked until they finish. The plugin works only with the sourcing sessions in your connected Talent Summoner account, and you review and send outreach yourself on the Talent Summoner website. Requires a Talent Summoner account.",
+        "developerName": "Talent Summoner",
+        "category": "Business & Operations",
+        "capabilities": [
+          "Draft candidate profiles",
+          "Search for candidates",
+          "Review and shortlist candidates",
+          "Find work emails",
+          "Prepare outreach drafts"
+        ],
+        "websiteURL": "https://talentsummoner.com",
+        "supportURL": "https://github.com/talent-summoner/agent-skills/issues",
+        "privacyPolicyURL": "https://talentsummoner.com/privacy",
+        "termsOfServiceURL": "https://talentsummoner.com/terms",
+        "defaultPrompt": [
+          "Show my Talent Summoner sourcing sessions.",
+          "Draft an ideal candidate profile for a senior React engineer in Berlin.",
+          "Find more candidates for my latest sourcing session."
+        ],
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png"
+      }
+    }
+  }
+}

@@ -70,7 +70,7 @@ jobs:
             source.sourceCommit = process.env.COMMIT;
             source.sha256 = createHash("sha256").update(readFileSync(process.env.SKILL)).digest("hex");
             write("skill-source.json", source);
-            for (const path of [".claude-plugin/plugin.json"]) {
+            for (const path of [".claude-plugin/plugin.json", "openai/plugin.json"]) {
               const plugin = JSON.parse(readFileSync(path, "utf8"));
               const [major, minor, patch] = plugin.version.split(".").map(Number);
               plugin.version = `${major}.${minor}.${patch + 1}`;
@@ -94,7 +94,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git switch -c "$BRANCH"
-          git add "$SKILL" skill-source.json .claude-plugin/plugin.json
+          git add "$SKILL" skill-source.json .claude-plugin/plugin.json openai/plugin.json
           git commit -m "chore: sync skill from talent-summoner-app ${COMMIT:0:12}"
           git push origin "$BRANCH"
           body="Exports the live canonical skill (deployed commit \`$COMMIT\`) and bumps the plugin version.
