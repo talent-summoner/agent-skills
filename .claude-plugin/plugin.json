@@ -1,0 +1,25 @@
+{
+  "name": "talent-summoner",
+  "displayName": "Talent Summoner",
+  "version": "0.2.0",
+  "description": "Source, review and contact hiring candidates with Talent Summoner: draft an ideal candidate profile, run AI candidate searches, shortlist people and look up work emails from Claude.",
+  "author": {
+    "name": "Talent Summoner",
+    "url": "https://talentsummoner.com"
+  },
+  "homepage": "https://talentsummoner.com",
+  "repository": "https://github.com/talent-summoner/agent-skills",
+  "documentationUrl": "https://talentsummoner.com/mcp",
+  "supportUrl": "https://github.com/talent-summoner/agent-skills/issues",
+  "privacyPolicyUrl": "https://talentsummoner.com/privacy",
+  "termsOfServiceUrl": "https://talentsummoner.com/terms",
+  "license": "MIT",
+  "keywords": [
+    "recruiting",
+    "sourcing",
+    "hiring",
+    "candidates",
+    "talent"
+  ],
+  "icon": "./assets/logo.png"
+}

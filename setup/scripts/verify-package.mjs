@@ -47,6 +47,7 @@ const source = JSON.parse(extract('skill-source.json').toString());
 const skill = extract('skills/talent-summoner/SKILL.md');
 assert.equal(createHash('sha256').update(skill).digest('hex'), source.sha256);
 assert.match(source.sourceCommit, /^[0-9a-f]{40}$/);
-assert.ok(skill.equals(await readFile('skills/talent-summoner/SKILL.md')));
+assert.ok(skill.equals(await readFile('../skills/talent-summoner/SKILL.md')), 'Packed skill differs from the repository-root export; rerun the build');
+assert.ok(extract('skill-source.json').equals(await readFile('../skill-source.json')), 'Packed skill-source.json differs from the repository root; rerun the build');
 assert.ok(extract('dist/setup.mjs').toString().startsWith('#!/usr/bin/env node'));
 console.log(`Verified ${pack.filename}: ${files.length} allowlisted files, one bin, canonical skill hash.`);

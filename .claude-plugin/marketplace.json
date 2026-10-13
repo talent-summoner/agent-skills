@@ -1,0 +1,15 @@
+{
+  "name": "talent-summoner",
+  "description": "Talent Summoner for Claude: AI candidate sourcing through the Talent Summoner remote MCP server.",
+  "owner": {
+    "name": "Talent Summoner",
+    "url": "https://talentsummoner.com"
+  },
+  "plugins": [
+    {
+      "name": "talent-summoner",
+      "source": "./",
+      "description": "Source, review and contact hiring candidates with Talent Summoner from Claude."
+    }
+  ]
+}

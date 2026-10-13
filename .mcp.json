@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "talent-summoner": {
+      "type": "http",
+      "url": "https://talentsummoner.com/api/mcp"
+    }
+  }
+}

@@ -5,13 +5,14 @@ The application owns the canonical skill at `public/skills/talent-summoner/SKILL
 Build and verify the exact tarball:
 
 ```sh
+cd setup
 npm ci
 npm run build
 npm test
 node scripts/verify-package.mjs
 ```
 
-Update `package.json` and `package-lock.json` to the same release version, then tag the reviewed commit with that version prefixed by `v`. The [release workflow](../.github/workflows/release.yml) verifies on Linux, macOS, and Windows and publishes the verified tarball using GitHub OIDC, without a long-lived npm publishing token. Prereleases publish to npm `next`; stable versions publish to `latest`.
+Update `setup/package.json` and `setup/package-lock.json` to the same release version, then tag the reviewed commit with that version prefixed by `v`. The [release workflow](../.github/workflows/release.yml) verifies on Linux, macOS, and Windows and publishes the verified tarball using GitHub OIDC, without a long-lived npm publishing token. Prereleases publish to npm `next`; stable versions publish to `latest`.
 
 The workflow checks registry availability with bounded retries. If an npm scan is still pending, rerun only the `availability` job after the scan clears. Do not republish the same version.
 
