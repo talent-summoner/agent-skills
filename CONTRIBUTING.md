@@ -29,7 +29,7 @@ node scripts/export-agent-skill.mjs /absolute/path/to/agent-skills --check
 
 ## Plugin manifests
 
-The repository root is also a Claude Code and Cursor plugin: `.claude-plugin/marketplace.json` and `.claude-plugin/plugin.json` for Claude Code, `.cursor-plugin/plugin.json` for Cursor, the shared `.mcp.json` and `assets/logo.png`. They use the same `skills/talent-summoner/SKILL.md` and are not part of the npm package. Bump `version` in both `plugin.json` files when the skill or MCP connection changes, then validate:
+The repository root is also a Claude Code plugin: `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, `.mcp.json` and `assets/logo.png`. It uses the same `skills/talent-summoner/SKILL.md` and is not part of the npm package. Bump `version` in `plugin.json` when the skill or MCP connection changes, then validate:
 
 ```sh
 node scripts/verify-plugin.mjs

@@ -22,7 +22,7 @@ Works with MCP-compatible AI agents, including Claude, ChatGPT and Cursor. Full 
 
 Keep your API key out of AI agent chats, shell commands, and Git. Setup itself does not start sourcing or use a Role.
 
-## Install as a Claude Code or Cursor plugin
+## Install as a Claude Code plugin
 
 The plugin bundles the MCP connection and the skill, and you sign in with your Talent Summoner account instead of an API key.
 
@@ -33,9 +33,7 @@ In Claude Code:
 /plugin install talent-summoner@talent-summoner
 ```
 
-In Cursor, open **Customize → Plugins → Add → From GitHub Repository** and enter `talent-summoner/agent-skills`.
-
-Your AI agent asks you to sign in to Talent Summoner the first time it uses a tool. The plugin runs no local code, hooks or scripts; it only connects to `https://talentsummoner.com/api/mcp`. Disconnect at any time in Talent Summoner under **Settings → Connected apps**. Use either the plugin or `npx @talent-summoner/setup` for an AI agent, not both, to avoid duplicate tools and skills.
+Claude Code asks you to sign in to Talent Summoner the first time it uses a tool. The plugin runs no local code, hooks or scripts; it only connects to `https://talentsummoner.com/api/mcp`. Disconnect at any time in Talent Summoner under **Settings → Connected apps**. Use either the plugin or `npx @talent-summoner/setup` in Claude Code, not both, to avoid duplicate tools and skills. For Cursor and other AI agents, use `npx @talent-summoner/setup`.
 
 ## What you can do
 

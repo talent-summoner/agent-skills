@@ -1,4 +1,4 @@
-# [INPUT]: Root plugin manifests (.claude-plugin/, .cursor-plugin/, .mcp.json) and the exported skill.
+# [INPUT]: Root plugin manifests (.claude-plugin/, .mcp.json) and the exported skill.
 # [OUTPUT]: Claude Code strict plugin validation plus manifest, MCP server and skill-hash consistency.
 # [POS]: Plugin CI beside the npm package checks in release.yml.
 # [PROTOCOL]: Pin the Claude Code CLI version; bump it deliberately.

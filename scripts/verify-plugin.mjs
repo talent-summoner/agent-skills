@@ -13,17 +13,13 @@ const check = (ok, message) => {
 
 const marketplace = readJson('.claude-plugin/marketplace.json');
 const claude = readJson('.claude-plugin/plugin.json');
-const cursor = readJson('.cursor-plugin/plugin.json');
 const mcp = readJson('.mcp.json');
 const source = readJson('skill-source.json');
 
 const entry = marketplace.plugins?.find((plugin) => plugin.name === claude.name);
 check(entry?.source === './', 'marketplace.json must list the plugin with source "./"');
-check(cursor.name === claude.name, 'Claude and Cursor plugin names differ');
-check(cursor.version === claude.version, 'Claude and Cursor plugin versions differ');
 check(claude.repository === REPOSITORY, `.claude-plugin/plugin.json repository must be ${REPOSITORY}`);
-check(cursor.repository === REPOSITORY, `.cursor-plugin/plugin.json repository must be ${REPOSITORY}`);
-check(existsSync(cursor.logo ?? ''), 'Cursor logo file is missing');
+check(existsSync(claude.icon ?? ''), 'plugin.json icon file is missing');
 
 const servers = Object.entries(mcp.mcpServers ?? {});
 check(servers.length === 1, '.mcp.json must define exactly one server');

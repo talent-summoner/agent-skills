@@ -9,6 +9,10 @@
   },
   "homepage": "https://talentsummoner.com",
   "repository": "https://github.com/talent-summoner/agent-skills",
+  "documentationUrl": "https://talentsummoner.com/mcp",
+  "supportUrl": "https://github.com/talent-summoner/agent-skills/issues",
+  "privacyPolicyUrl": "https://talentsummoner.com/privacy",
+  "termsOfServiceUrl": "https://talentsummoner.com/terms",
   "license": "MIT",
   "keywords": [
     "recruiting",
@@ -16,5 +20,6 @@
     "hiring",
     "candidates",
     "talent"
-  ]
+  ],
+  "icon": "./assets/logo.png"
 }
