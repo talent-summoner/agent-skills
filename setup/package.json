@@ -1,6 +1,6 @@
 {
   "name": "@talent-summoner/setup",
-  "version": "0.1.7",
+  "version": "0.1.8-next.0",
   "type": "module",
   "description": "Connect AI agents to Talent Summoner sourcing tools and skill",
   "keywords": [
