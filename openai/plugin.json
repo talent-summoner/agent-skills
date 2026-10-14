@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "talent-summoner",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Source, review and contact hiring candidates with Talent Summoner: draft an ideal candidate profile, run AI candidate searches, shortlist people and look up work emails.",
   "author": {
     "name": "Talent Summoner Limited",
@@ -23,7 +23,7 @@
         "displayName": "Talent Summoner",
         "shortDescription": "Source and review candidates",
         "longDescription": "Talent Summoner finds and evaluates hiring candidates for a role. Describe the role, review the ideal candidate profile it drafts, then search for matching candidates, refine the criteria and find more people in the same session. Review and shortlist candidates, look up work emails and prepare outreach drafts.\n\nSearches and email lookups run in the background and usually take a few minutes; progress is checked until they finish. The plugin works only with the sourcing sessions in your connected Talent Summoner account, and you review and send outreach yourself on the Talent Summoner website. Requires a Talent Summoner account.",
-        "developerName": "Talent Summoner Limited",
+        "developerName": "Yue Hin Hinnes Lung",
         "category": "Business & Operations",
         "capabilities": [
           "Draft candidate profiles",

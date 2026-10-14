@@ -3,24 +3,7 @@
   "mcpServers": {
     "talent-summoner": {
       "type": "streamable-http",
-      "url": "https://talentsummoner.com/api/mcp",
-      "extensions": {
-        "com.openai": {
-          "auth": {
-            "type": "oauth",
-            "client": {
-              "mode": "provided",
-              "clientId": "REPLACE_WITH_CHATGPT_CLIENT_ID",
-              "tokenEndpointAuthMethod": "client_secret_post"
-            },
-            "baseScopes": [
-              "openid",
-              "email",
-              "offline_access"
-            ]
-          }
-        }
-      }
+      "url": "https://talentsummoner.com/api/mcp"
     }
   }
 }

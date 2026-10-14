@@ -10,7 +10,6 @@ import { existsSync, readFileSync } from 'node:fs';
 const MCP_URL = 'https://talentsummoner.com/api/mcp';
 const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
 const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
-const CLIENT_ID_PLACEHOLDER = 'REPLACE_WITH_CHATGPT_CLIENT_ID';
 // The OpenAI package declares connection settings only; the client secret and reviewer access go in the portal.
 const SECRET_KEY = /secret|password|credential|api_?key|access_?token|refresh_?token|^token$|^headers$|reviewer_instructions/i;
 const REPOSITORY = 'https://github.com/talent-summoner/agent-skills';
@@ -84,14 +83,11 @@ check(
   openaiServer?.type === 'streamable-http' && openaiServer.url === MCP_URL,
   `openai/mcp.json must point at ${MCP_URL} over streamable-http`
 );
-const client = openaiServer?.extensions?.['com.openai']?.auth?.client;
+// ChatGPT discovers our OAuth server and signs in with its Client ID Metadata
+// Document (CIMD), so the package declares no client and carries no credentials.
 check(
-  openaiServer?.extensions?.['com.openai']?.auth?.type === 'oauth' &&
-    client?.mode === 'provided' &&
-    typeof client.clientId === 'string' &&
-    client.clientId.trim() !== '' &&
-    client.tokenEndpointAuthMethod === 'client_secret_post',
-  'openai/mcp.json must declare a provided OAuth client with a clientId and client_secret_post'
+  openaiServer?.extensions?.['com.openai']?.auth === undefined,
+  'openai/mcp.json must not declare an OAuth client; ChatGPT uses CIMD discovery'
 );
 const secretFields = (value, path) =>
   value !== null && typeof value === 'object'
@@ -102,9 +98,6 @@ const secretFields = (value, path) =>
     : [];
 for (const field of [...secretFields(openai, 'openai/plugin.json'), ...secretFields(openaiMcp, 'openai/mcp.json')]) {
   check(false, `${field} looks like a secret or credential; enter it in the OpenAI portal instead`);
-}
-if (client?.clientId === CLIENT_ID_PLACEHOLDER) {
-  console.warn(`! openai/mcp.json clientId is still ${CLIENT_ID_PLACEHOLDER}; set the public ChatGPT client ID before uploading.`);
 }
 
 const skillHash = createHash('sha256').update(readFileSync(SKILL)).digest('hex');

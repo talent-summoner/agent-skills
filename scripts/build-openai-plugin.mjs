@@ -2,13 +2,12 @@
  * [INPUT]: openai/plugin.json, openai/mcp.json, skills/ and the assets the OpenAI manifest references.
  * [OUTPUT]: dist/openai/<name>-<version>.zip, the ChatGPT and Codex plugin package with plugin.json, mcp.json, skills/ and assets/ at the archive root; its entry list on stdout.
  * [POS]: Packaging step for the OpenAI plugin directory upload (platform.openai.com/plugins, "With MCP"); run scripts/verify-plugin.mjs first.
- * [PROTOCOL]: Dependency-free and deterministic (sorted entries, fixed timestamps). Packages only listed files, never secrets. --require-client-id refuses the client ID placeholder.
+ * [PROTOCOL]: Dependency-free and deterministic (sorted entries, fixed timestamps). Packages only listed files, never secrets.
  */
 import { lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { posix } from 'node:path';
 import { crc32, deflateRawSync } from 'node:zlib';
 
-const PLACEHOLDER = 'REPLACE_WITH_CHATGPT_CLIENT_ID';
 const ASSET_FIELDS = ['composerIcon', 'composerIconDark', 'logo', 'logoDark'];
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -21,15 +20,6 @@ const manifest = readJson('openai/plugin.json');
 const mcp = readJson('openai/mcp.json');
 const listing = manifest.extensions?.['com.openai']?.interface ?? {};
 
-const clientIds = Object.values(mcp.mcpServers ?? {}).map(
-  (server) => server.extensions?.['com.openai']?.auth?.client?.clientId
-);
-if (clientIds.includes(PLACEHOLDER)) {
-  if (process.argv.includes('--require-client-id')) {
-    fail(`openai/mcp.json still has the ${PLACEHOLDER} placeholder; set the public ChatGPT OAuth client ID first.`);
-  }
-  console.warn(`! openai/mcp.json clientId is the ${PLACEHOLDER} placeholder; do not upload this ZIP.`);
-}
 
 const walk = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
