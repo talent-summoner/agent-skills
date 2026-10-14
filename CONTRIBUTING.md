@@ -47,7 +47,7 @@ The same repository builds the OpenAI (ChatGPT and Codex) plugin package. `opena
 node scripts/build-openai-plugin.mjs   # dist/openai/talent-summoner-<version>.zip
 ```
 
-The ZIP contains `plugin.json`, `mcp.json`, `skills/` and the referenced `assets/` at its root, and CI uploads it as the `openai-plugin` artifact. `openai/mcp.json` declares no OAuth client: ChatGPT discovers our authorization server and signs in with its Client ID Metadata Document (CIMD), so the package carries no client ID or secret. Enter the reviewer test account and other review details in the [OpenAI plugin portal](https://platform.openai.com/plugins), never in this repository. Keep `version` in both plugin manifests equal, and upload a new ZIP whenever the skill or listing changes.
+The ZIP contains `plugin.json`, `mcp.json`, `skills/` and the referenced `assets/` at its root, and CI uploads it as the `openai-plugin` artifact. `openai/mcp.json` declares only CIMD OAuth (`{"type": "oauth", "client": {"mode": "cimd"}}`): ChatGPT discovers our authorization server and signs in with its Client ID Metadata Document, so the package carries no client ID or secret. Enter the reviewer test account and other review details in the [OpenAI plugin portal](https://platform.openai.com/plugins), never in this repository. Keep `version` in both plugin manifests equal, and upload a new ZIP whenever the skill or listing changes.
 
 The daily **Sync skill from production** workflow compares the live skill at `talentsummoner.com` with `skill-source.json`. When they differ, it pushes a `skill-sync/<commit>` branch with the export and a plugin patch bump, and opens a pull request for review.
 
