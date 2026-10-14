@@ -44,9 +44,10 @@ We have prepared a Talent Summoner plugin for the OpenAI plugin directory used b
 - Draft an ideal candidate profile before searching: “Draft the ideal candidate profile for a senior React engineer in Berlin. Let me review it before searching.”
 - Search for candidates, refine the criteria, and find more candidates in the same session.
 - Review and shortlist candidates, and request work-email lookups.
-- Prepare outreach drafts for shortlisted candidates.
+- Share a shortlist through a link that expires.
+- Prepare outreach to shortlisted candidates and send it once you approve.
 
-Your AI agent asks before unlocking a Role for a session. You review and confirm outreach on the Talent Summoner website before sending.
+Your AI agent asks before unlocking a Role for a session. It also asks before publishing a share link. Before any outreach goes out, it shows you the sender, every recipient and every complete message, and sends only after you approve. Sending cannot be undone.
 
 ## Manage your connection
 

@@ -3,7 +3,17 @@
   "mcpServers": {
     "talent-summoner": {
       "type": "streamable-http",
-      "url": "https://talentsummoner.com/api/mcp"
+      "url": "https://talentsummoner.com/api/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "cimd"
+            }
+          }
+        }
+      }
     }
   }
 }

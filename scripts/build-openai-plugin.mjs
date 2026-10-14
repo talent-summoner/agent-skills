@@ -17,7 +17,6 @@ const fail = (message) => {
 };
 
 const manifest = readJson('openai/plugin.json');
-const mcp = readJson('openai/mcp.json');
 const listing = manifest.extensions?.['com.openai']?.interface ?? {};
 
 

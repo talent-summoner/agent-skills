@@ -6,6 +6,7 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 
 const MCP_URL = 'https://talentsummoner.com/api/mcp';
 const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
@@ -83,11 +84,14 @@ check(
   openaiServer?.type === 'streamable-http' && openaiServer.url === MCP_URL,
   `openai/mcp.json must point at ${MCP_URL} over streamable-http`
 );
-// ChatGPT discovers our OAuth server and signs in with its Client ID Metadata
-// Document (CIMD), so the package declares no client and carries no credentials.
+// ChatGPT discovers our authorization server and signs in with its Client ID
+// Metadata Document (CIMD). The package must declare exactly that CIMD auth and
+// nothing else: no client id or secret, no registration or token URLs, no headers.
+const CIMD_AUTH = { type: 'oauth', client: { mode: 'cimd' } };
+const auth = openaiServer?.extensions?.['com.openai']?.auth;
 check(
-  openaiServer?.extensions?.['com.openai']?.auth === undefined,
-  'openai/mcp.json must not declare an OAuth client; ChatGPT uses CIMD discovery'
+  isDeepStrictEqual(auth, CIMD_AUTH),
+  `openai/mcp.json must declare exactly the CIMD auth ${JSON.stringify(CIMD_AUTH)}; ChatGPT discovers the rest`
 );
 const secretFields = (value, path) =>
   value !== null && typeof value === 'object'
