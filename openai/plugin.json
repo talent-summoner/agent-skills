@@ -1,0 +1,51 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "talent-summoner",
+  "version": "0.2.2",
+  "description": "Source, review and contact hiring candidates with Talent Summoner: draft an ideal candidate profile, run AI candidate searches, shortlist people, look up work emails, share shortlists and send outreach you approve.",
+  "author": {
+    "name": "Talent Summoner Limited",
+    "url": "https://talentsummoner.com"
+  },
+  "homepage": "https://talentsummoner.com",
+  "repository": "https://github.com/talent-summoner/agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "recruiting",
+    "sourcing",
+    "hiring",
+    "candidates",
+    "talent"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Talent Summoner",
+        "shortDescription": "Source and review candidates",
+        "longDescription": "Talent Summoner helps recruiters, founders and hiring managers find and review candidates for a role. Each search is a saved session in your Talent Summoner account, so you can continue it in ChatGPT or in the Talent Summoner web app.\n\nWhat you can do\n- Start a sourcing session from a role brief or job description. Talent Summoner first drafts an ideal candidate profile (ICP): the skills, experience and constraints it will search for. You review and edit it before any search runs, or ask it to search right away.\n- Search, find more candidates and refine the requirements in the same session. Searches run in the background and usually take 2 to 10 minutes; ChatGPT checks progress and reports when results are ready.\n- Read candidates with a suggested fit label (Strong, Good, Partial or Weak fit) and the reasons behind it, including any requirement a candidate does not meet.\n- Save your own decision on each candidate: liked, shortlisted or skipped, with an optional reason or note. Your decisions also appear in the web app.\n- Request a work-email lookup for a candidate. A finished lookup can come back without an address.\n- Share a shortlist with a colleague as a link that expires after 1, 7 or 14 days. ChatGPT first shows you every candidate who will be included and what the page contains, and publishes only after you approve. You can update or revoke the link later.\n- Prepare email or LinkedIn outreach to your shortlisted candidates. ChatGPT shows you the sender, every recipient and every complete message. Messages are sent only after you approve that exact batch, and sending cannot be undone.\n\nWho it is for\nRecruiters, talent partners, founders and hiring managers who source candidates for open roles.\n\nHow decisions are made\nYou make every hiring decision. Talent Summoner helps you find and review people; fit labels are suggestions based on the criteria you set, not decisions. It does not filter candidates by protected characteristics such as age, sex, race, religion, national origin or disability. Outreach is for first contact with potential candidates. It is not for telling candidates about hiring decisions.\n\nYour account and your approval\n- The plugin sees and changes only your own sessions.\n- Some sessions need one of your account's Roles. ChatGPT asks for your explicit agreement before it assigns one, and a search never assigns one on its own.\n- Purchases happen only on talentsummoner.com. The plugin cannot buy anything.\n- Connecting the email or LinkedIn account you send from happens in the Talent Summoner web app.\n\nLimitations\n- You need a Talent Summoner account. Some features need an active plan or Role on your account.\n- Searches and email lookups run in the background and can take several minutes. If a search is still running, ChatGPT gives you a link to the session.\n- Candidate information comes from public professional sources and may be incomplete or out of date. Check it before you act on it.\n- Contact details stay hidden until the session has access.\n- Not available in the European Economic Area, the United Kingdom or Switzerland.\n\nYou sign in with your Talent Summoner account when you connect. Disconnect at any time in Settings > Connected apps.",
+        "developerName": "Yue Hin Hinnes Lung",
+        "category": "Business & Operations",
+        "capabilities": [
+          "Draft candidate profiles",
+          "Search for candidates",
+          "Review and shortlist candidates",
+          "Find work emails",
+          "Share a shortlist link",
+          "Prepare and send approved outreach"
+        ],
+        "websiteURL": "https://talentsummoner.com",
+        "supportURL": "https://talentsummoner.com/contact",
+        "privacyPolicyURL": "https://talentsummoner.com/privacy",
+        "termsOfServiceURL": "https://talentsummoner.com/terms",
+        "defaultPrompt": [
+          "Draft an ideal candidate profile for a senior backend engineer in Singapore. Let me review it before you search.",
+          "Show my recent sourcing sessions and the candidates I have shortlisted.",
+          "Find more candidates for my latest session and show me the five strongest fits with reasons."
+        ],
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png"
+      }
+    }
+  }
+}
