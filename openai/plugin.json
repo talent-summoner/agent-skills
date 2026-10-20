@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "talent-summoner",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Source, review and contact hiring candidates with Talent Summoner: draft an ideal candidate profile, run AI candidate searches, shortlist people, look up work emails, share shortlists and send outreach you approve.",
   "author": {
     "name": "Talent Summoner Limited",
