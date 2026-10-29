@@ -15,6 +15,7 @@ The workflow is **start → review the ICP → continue (search, refine) → rev
 | Check progress | `sourcing_read` | Reads a session, or lists sessions when no ID is given |
 | Continue | `sourcing_continue` | Sends one ordinary message: ICP edits or approval, search, find more, refine, outreach draft |
 | Review | `sourcing_review` | Saves `liked`, `shortlisted` or `skipped` for one candidate |
+| Notes | `sourcing_notes` | Lists, adds (text and/or files), edits or deletes the user's private notes about a candidate |
 | Contact | `sourcing_contact` | Requests a work-email lookup for one candidate |
 | Share | `sourcing_share` | Previews, publishes and manages a public shortlist link, only after the user approves the previewed list |
 | Review outreach | `sourcing_outreach` | Previews the personalised messages, reads a sent batch's status, or resolves LinkedIn reachability |
